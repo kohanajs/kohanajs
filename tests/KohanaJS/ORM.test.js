@@ -609,4 +609,43 @@ END;
     expect(loaded).toBe(false);
   })
 
+  test('ORM convert boolean to TRUE and FALSE when save', () => {
+    KOJS.init(__dirname+'/test13');
+
+    //idx is autoincrement primary key
+    const targetPath = path.normalize(__dirname+'/test13/db/empty.sqlite');
+    const sourcePath = path.normalize(__dirname+'/orm/db/empty.default.sqlite');
+    if(fs.existsSync(targetPath))fs.unlinkSync(targetPath);
+
+    fs.copyFileSync(sourcePath, targetPath);
+
+    const db = new Database(targetPath);
+    db.exec(`
+CREATE TABLE persons(
+id INTEGER UNIQUE DEFAULT ((( strftime('%s','now') - 1563741060 ) * 100000) + (RANDOM() & 65535)) NOT NULL ,
+created_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL ,
+updated_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL ,
+enable BOOLEAN ); 
+
+CREATE TRIGGER persons_updated_at AFTER UPDATE ON persons WHEN old.updated_at < CURRENT_TIMESTAMP BEGIN
+UPDATE persons SET updated_at = CURRENT_TIMESTAMP WHERE id = old.id;
+END;
+`);
+
+    const Person = KOJS.require('models/Person');
+    const p = new Person(null, {database: db });
+    p.enable = true;
+    p.save();
+
+    const r = new Person(p.id, {database: db});
+
+    expect(r.enable ? true : false).toBe(true);
+
+    const p2 = new Person(null, {database: db});
+    p2.enable = false;
+    p2.save();
+
+    const r2 = new Person(p.id, {database: db});
+    expect(r2.enable ? true : false).toBe(true);
+  })
 });

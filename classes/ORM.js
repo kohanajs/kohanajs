@@ -82,7 +82,7 @@ class ORM extends Model{
     const values = columns.map(x => {
       const value = this[x];
       if(typeof value === 'boolean'){
-        return this[x] ? 'TRUE' : 'FALSE';
+        return this[x] ? 1 : 0;
       }
       return this[x]
     });
