@@ -1,0 +1,27 @@
+{
+  "name": "@kohanajs/kohanajs",
+  "version": "1.0.0",
+  "description": "Node.js MVC framework base on PHP Kohana Framework",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest --coverage"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://gitlab.com/kohanajs/kohanajs.git"
+  },
+  "author": "Kojin Nakana",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://gitlab.com/kohanajs/kohanajs/-/issues"
+  },
+  "homepage": "https://gitlab.com/kohanajs/kohanajs.git",
+  "dependencies": {
+    "@kohanajs/core-mvc": "^1.0.1",
+    "pluralize": "^8.0.0"
+  },
+  "devDependencies": {
+    "better-sqlite3": "^7.0.1",
+    "jest": "^26.0.1"
+  }
+}
