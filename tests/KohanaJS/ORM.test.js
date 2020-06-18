@@ -153,6 +153,9 @@ describe('orm test', ()=>{
 
         const addresses = peter.hasMany(Address);
         expect(addresses.length).toBe(2);
+
+        const addresses2 = peter.hasMany(Address, 'person_id');
+        expect(addresses2.length).toBe(2);
     });
 
     test('instance belongsTo', () =>{
