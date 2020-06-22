@@ -252,4 +252,16 @@ describe('KOJS test', ()=>{
       expect(e.message).toBe('invalid require path');
     }
   })
+
+  test('specific KOJS.require file', ()=>{
+    KOJS.classPath['foo/Bar.js'] = path.normalize(__dirname + '/test14/Bar');
+    const Bar = KOJS.require('foo/Bar');
+    const bar = new Bar();
+    expect(bar.greeting()).toBe('Hello from Bar');
+
+    KOJS.classPath['kaa/Tar.js'] = path.normalize(__dirname + '/test14/Tar.js');
+    const Tar = KOJS.require('kaa/Tar.js');
+    const tar = new Tar();
+    expect(tar.greeting()).toBe('Hello from Tar');
+  })
 });
