@@ -1,6 +1,6 @@
 {
   "name": "kohanajs",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Node.js MVC framework base on PHP Kohana Framework",
   "main": "index.js",
   "scripts": {
@@ -21,7 +21,7 @@
     "pluralize": "^8.0.0"
   },
   "devDependencies": {
-    "better-sqlite3": "^7.0.1",
-    "jest": "^26.0.1"
+    "better-sqlite3": "^7.1.0",
+    "jest": "^26.1.0"
   }
 }

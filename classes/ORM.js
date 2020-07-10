@@ -28,6 +28,8 @@ pluralize.addPluralRule('person', 'persons');
 const KOJS = require('../KohanaJS');
 const {Model} = require('@kohanajs/core-mvc');
 
+const defaultID = () => ( ( (Date.now() - 1563741060000) / 1000 ) | 0 ) * 100000 + ((Math.random() * 100000) & 65535);
+
 class ORM extends Model{
   constructor(id = null, options = {}){
     super();
@@ -55,7 +57,6 @@ class ORM extends Model{
         this.constructor.jointTablePrefix = pluralize.singular(this.constructor.tableName);
       }
     }
-
 
     if( options.lazyload || !this.id )return;
     this.load();
@@ -91,7 +92,7 @@ class ORM extends Model{
     if(this.id){
       sql = `UPDATE ${tableName} SET ${columns.map(x => `${x} = ?`).join(', ')} WHERE id = ?`;
     }else{
-      this.id = this.options.createWithId || ( ( (Date.now() - 1563741060000) / 1000 ) | 0 ) * 100000 + ((Math.random() * 100000) & 65535);
+      this.id = this.options.createWithId || defaultID();
       sql = `INSERT OR IGNORE INTO ${tableName} (${columns.join(', ')}, id) VALUES (?, ${columns.map(x => `?`).join(', ')})`;
     }
 
@@ -210,6 +211,7 @@ ORM.fields = new Map();
 ORM.belongsTo = new Map();
 ORM.hasMany   = [];//hasMany cannot be Map, because children models may share same fk name.
 ORM.belongsToMany = [];
+ORM.defaultID = defaultID;
 
 Object.freeze(ORM.prototype);
 module.exports = ORM;
