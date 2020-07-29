@@ -193,6 +193,22 @@ class ORM extends Model{
   }
 
   /**
+   * find exist instance from values
+   * @param {Object} values
+   */
+  find(values){
+    const model = this.constructor;
+    const ks = Object.keys(values);
+    const vs = ks.map(k => String(values[k]));
+    if(ks.length <= 0)return;
+
+    const sql = 'SELECT * FROM '+ model.tableName + ' WHERE '+ ks.map( k => `${k} = ?`).join(' AND ');
+    const result = this.prepare(sql).get(...vs);
+
+    Object.assign(this, result);
+  }
+
+  /**
    *
    * @param {string} sql
    */
