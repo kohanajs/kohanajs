@@ -142,7 +142,6 @@ if(!global.kohanaJS){
   KOJS.SYS_PATH = module.filename.replace(/[\/\\]KohanaJS\.js$/, '');
   KOJS.EXE_PATH = KOJS.SYS_PATH;
   KOJS.APP_PATH = KOJS.SYS_PATH;
-  KOJS.APP_PATH = KOJS.SYS_PATH;
   KOJS.MOD_PATH = KOJS.SYS_PATH;
   KOJS.SYM_PATH = KOJS.SYS_PATH;
   KOJS.config   = require('./config/site');
