@@ -1,22 +1,22 @@
+const ORM = require('../../classes/ORM');
 const Database = require('better-sqlite3');
 const path = require('path');
 const fs = require('fs');
 
 describe('orm test', ()=>{
-  let KOJS;
+  let KohanaJS;
 
   beforeEach( () => {
-    KOJS = require('../../KohanaJS');
-    KOJS.init(__dirname, __dirname+'/orm/application', __dirname+'/test1/modules');
+    KohanaJS = require('../../KohanaJS');
+    KohanaJS.init(__dirname, __dirname+'/orm/application', __dirname+'/test1/modules');
   });
 
   afterEach( () => {
-    KOJS = null;
+    KohanaJS = null;
   });
 
     test('orm', ()=>{
-        const KOJSORM = KOJS.require('ORM');
-        const ORM = require('../../classes/ORM');
+        const KOJSORM = KohanaJS.require('ORM');
         expect(KOJSORM).toBe(ORM);
 
         const obj = new ORM();
@@ -49,7 +49,7 @@ describe('orm test', ()=>{
         expect(result.text).toBe(tmpValue);
     });
 
-    test('ORM.setDB', ()=>{
+    test('ORM.setDB', async ()=>{
         const dbPath = path.normalize(__dirname+'/orm/db/db1.sqlite');
         if(fs.existsSync(dbPath))fs.unlinkSync(dbPath);
         const db = new Database(dbPath);
@@ -64,8 +64,8 @@ describe('orm test', ()=>{
         db.prepare(`INSERT INTO ${tableName} (text) VALUES (?)`).run('Foo');
 
         const TestModel = require('./orm/application/classes/TestModel');
-        const m = new TestModel( 1);
-        const m2 = new TestModel(2);
+        const m = await new TestModel( 1).load();
+        const m2 = await new TestModel(2).load();
 
         expect(TestModel.tableName).toBe('testmodels');
 
@@ -74,31 +74,31 @@ describe('orm test', ()=>{
 
     });
 
-    test('ORM instance setDB', ()=>{
-        const dbPath = path.normalize(__dirname+'/orm/db/db2.sqlite');
-        if(fs.existsSync(dbPath))fs.unlinkSync(dbPath);
-        const db = new Database(dbPath);
+    test('ORM instance setDB', async ()=>{
+      const dbPath = path.normalize(__dirname+'/orm/db/db2.sqlite');
+      if(fs.existsSync(dbPath))fs.unlinkSync(dbPath);
+      const db = new Database(dbPath);
 
-        const tableName = 'testmodels';
-        db.prepare(`CREATE TABLE ${tableName}( id INTEGER UNIQUE PRIMARY KEY AUTOINCREMENT NOT NULL , created_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL , updated_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL , text TEXT NOT NULL)`).run();
-        db.prepare(`CREATE TRIGGER ${tableName}_updated_at AFTER UPDATE ON ${tableName} WHEN old.updated_at < CURRENT_TIMESTAMP BEGIN UPDATE ${tableName} SET updated_at = CURRENT_TIMESTAMP WHERE id = old.id; END;`).run();
-        db.prepare(`INSERT INTO ${tableName} (text) VALUES (?)`).run('Hello');
-        db.prepare(`INSERT INTO ${tableName} (text) VALUES (?)`).run('Foo');
+      const tableName = 'testmodels';
+      db.prepare(`CREATE TABLE ${tableName}( id INTEGER UNIQUE PRIMARY KEY AUTOINCREMENT NOT NULL , created_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL , updated_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL , text TEXT NOT NULL)`).run();
+      db.prepare(`CREATE TRIGGER ${tableName}_updated_at AFTER UPDATE ON ${tableName} WHEN old.updated_at < CURRENT_TIMESTAMP BEGIN UPDATE ${tableName} SET updated_at = CURRENT_TIMESTAMP WHERE id = old.id; END;`).run();
+      db.prepare(`INSERT INTO ${tableName} (text) VALUES (?)`).run('Hello');
+      db.prepare(`INSERT INTO ${tableName} (text) VALUES (?)`).run('Foo');
 
-        const TestModel = require('./orm/application/classes/TestModel');
+      const TestModel = require('./orm/application/classes/TestModel');
 
-        const m = new TestModel(1, {database: db});
-        const m2 = new TestModel(2,{database: db});
+      const m = await new TestModel(1, {database: db}).load();
+      const m2 = await ORM.factory(TestModel, 2, {database: db});
 
-        expect(TestModel.tableName).toBe('testmodels');
+      expect(TestModel.tableName).toBe('testmodels');
 
-        expect(m.text).toBe('Hello');
-        expect(m2.text).toBe('Foo');
+      expect(m.text).toBe('Hello');
+      expect(m2.text).toBe('Foo');
 
     });
 
 
-    test('alias model', ()=>{
+    test('alias model', async ()=>{
         const dbPath = path.normalize(__dirname+'/orm/db/db3.sqlite');
         if(fs.existsSync(dbPath))fs.unlinkSync(dbPath);
         const db = new Database(dbPath);
@@ -116,49 +116,48 @@ describe('orm test', ()=>{
         new AliasModel();
         expect(AliasModel.jointTablePrefix).toBe('testmodel');
 
-        const model = new AliasModel(1, {database:db});
+        const model = await ORM.factory(AliasModel, 1, {database:db});
         expect(model.text).toBe('Hello');
     });
 
-    test('belongsTo', () =>{
+    test('belongsTo', async () =>{
         const dbPath = path.normalize(__dirname+'/orm/db/belongsTo4.sqlite');
         if(fs.existsSync(dbPath))fs.unlinkSync(dbPath);
         fs.copyFileSync(__dirname+'/orm/db/belongsTo.default.sqlite', dbPath);
         const db = new Database(dbPath);
-        db.prepare('INSERT INTO persons (first_name, last_name) VALUES (?, ?)').run('Peter', 'Pan');
+        db.prepare('INSERT INTO persons (id, first_name, last_name) VALUES (?, ?, ?)').run(1, 'Peter', 'Pan');
         db.prepare('INSERT INTO addresses (person_id, address1) VALUES (?, ?)').run(1, 'Planet X');
 
         const ORM = require('../../classes/ORM');
         ORM.database = db;
 
-        const Address = KOJS.require('models/Address');
-        const Person = KOJS.require('models/Person');
+        const Address = KohanaJS.require('model/Address');
+        const Person = KohanaJS.require('model/Person');
 
-        const peter = new Person(1);
+        const peter = await new Person(1).load();
         expect(peter.first_name).toBe('Peter');
 
-        const home = new Address(1);
+        const home = await new Address(1).load();
         expect(home.address1).toBe('Planet X');
 
-        const owner = home.belongsTo('person_id');
+        const owner = await home.belongsTo('person_id');
         expect(owner.first_name).toBe('Peter');
-
 
         const office = new Address();
         office.address1 = 'Planet Y';
         office.person_id = peter.id;
-        office.save();
+        await office.save();
 
         expect(office.address1).toBe('Planet Y');
 
-        const addresses = peter.hasMany(Address);
+        const addresses = await peter.hasMany(Address);
         expect(addresses.length).toBe(2);
 
-        const addresses2 = peter.hasMany(Address, 'person_id');
+        const addresses2 = await peter.hasMany(Address, 'person_id');
         expect(addresses2.length).toBe(2);
     });
 
-    test('instance belongsTo', () =>{
+    test('instance belongsTo', async () =>{
         const dbPath = path.normalize(__dirname+'/orm/db/belongsTo5.sqlite');
         if(fs.existsSync(dbPath))fs.unlinkSync(dbPath);
         fs.copyFileSync(__dirname+'/orm/db/belongsTo.default.sqlite', dbPath);
@@ -166,22 +165,22 @@ describe('orm test', ()=>{
         db.prepare('INSERT INTO persons (first_name, last_name) VALUES (?, ?)').run('Peter', 'Pan');
         db.prepare('INSERT INTO addresses (person_id, address1) VALUES (?, ?)').run(1, 'Planet X');
 
-        const Address = KOJS.require('models/Address');
-        const Person = KOJS.require('models/Person');
+        const Address = KohanaJS.require('model/Address');
+        const Person = KohanaJS.require('model/Person');
 
-        const peter = new Person(1, {database: db} );
+        const peter = await ORM.factory(Person, 1, {database: db});
         expect(peter.first_name).toBe('Peter');
 
-        const home = new Address(1, {database: db} );
+        const home = await ORM.factory(Address, 1, {database: db});
         expect(home.address1).toBe('Planet X');
 
-        const owner = home.belongsTo('person_id');
+        const owner = await home.belongsTo('person_id');
         expect(owner.first_name).toBe('Peter');
 
         expect(owner.db).toStrictEqual(home.db);
     });
 
-    test('belongsToMany', () =>{
+    test('belongsToMany', async () =>{
         const dbPath = path.normalize(__dirname+'/orm/db/belongsToMany6.sqlite');
         if(fs.existsSync(dbPath))fs.unlinkSync(dbPath);
         fs.copyFileSync(__dirname+'/orm/db/belongsToMany.default.sqlite', dbPath);
@@ -196,19 +195,19 @@ describe('orm test', ()=>{
         const ORM = require('../../classes/ORM');
         ORM.database = db;
 
-        const Product = KOJS.require('models/Product');
-        const Tag     = KOJS.require('models/Tag');
+        const Product = KohanaJS.require('model/Product');
+        const Tag     = KohanaJS.require('model/Tag');
 
-        const product = new Product(1);
+        const product = await ORM.factory(Product, 1);
 
         expect(product.name).toBe('bar');
-        const tags = product.belongsToMany(Tag);
+        const tags = await product.belongsToMany(Tag);
 
         expect(tags[0].name).toBe('foo');
         expect(tags[1].name).toBe('tar');
     });
 
-    test('instance belongsToMany', () =>{
+    test('instance belongsToMany', async () =>{
         const dbPath = path.normalize(__dirname+'/orm/db/belongsToMany7.sqlite');
         if(fs.existsSync(dbPath))fs.unlinkSync(dbPath);
         fs.copyFileSync(__dirname+'/orm/db/belongsToMany.default.sqlite', dbPath);
@@ -220,13 +219,13 @@ describe('orm test', ()=>{
         db.prepare('INSERT INTO product_tags (product_id, tag_id) VALUES (?,?)').run(1, 1);
         db.prepare('INSERT INTO product_tags (product_id, tag_id) VALUES (?,?)').run(1, 2);
 
-        const Product = KOJS.require('models/Product');
-        const Tag     = KOJS.require('models/Tag');
+        const Product = KohanaJS.require('model/Product');
+        const Tag     = KohanaJS.require('model/Tag');
 
-        const product = new Product(1, {database: db} );
+        const product = await ORM.factory(Product, 1, {database: db});
 
         expect(product.name).toBe('bar');
-        const tags = product.belongsToMany(Tag);
+        const tags = await product.belongsToMany(Tag);
 
         expect(tags[0].name).toBe('foo');
         expect(tags[1].name).toBe('tar');
@@ -235,7 +234,7 @@ describe('orm test', ()=>{
         expect(tags[1].db).toStrictEqual(product.db);
     });
 
-    test('ORM get all from model', ()=>{
+    test('ORM get all from model', async ()=>{
         const dbPath = path.normalize(__dirname+'/orm/db/belongsToMany8.sqlite');
         if(fs.existsSync(dbPath))fs.unlinkSync(dbPath);
         fs.copyFileSync(__dirname+'/orm/db/belongsToMany.default.sqlite', dbPath);
@@ -247,14 +246,14 @@ describe('orm test', ()=>{
         const ORM = require('../../classes/ORM');
         ORM.database = db;
 
-        const Tag = KOJS.require('models/Tag');
-        const tags = new Tag(null, {database: db}).all();
+        const Tag = KohanaJS.require('model/Tag');
+        const tags = await ORM.getAll(Tag, {database: db});
 
         expect(tags[0].name).toBe('foo');
         expect(tags[1].name).toBe('tar');
     });
 
-    test('instance get all from model', ()=>{
+    test('instance get all from model', async ()=>{
         const dbPath = path.normalize(__dirname+'/orm/db/belongsToMany9.sqlite');
         if(fs.existsSync(dbPath))fs.unlinkSync(dbPath);
         fs.copyFileSync(__dirname+'/orm/db/belongsToMany.default.sqlite', dbPath);
@@ -263,15 +262,15 @@ describe('orm test', ()=>{
         db.prepare('INSERT INTO tags (name) VALUES (?)').run('foo');
         db.prepare('INSERT INTO tags (name) VALUES (?)').run('tar');
 
-        const Tag = KOJS.require('models/Tag');
+        const Tag = KohanaJS.require('model/Tag');
         const t = new Tag(null, {database: db} );
-        const tags = t.all();
+        const tags = await t.all();
 
         expect(tags[0].name).toBe('foo');
         expect(tags[1].name).toBe('tar');
     });
 
-    test('enumerate', ()=>{
+    test('enumerate', async ()=>{
       const dbPath = path.normalize(__dirname+'/orm/db/belongsToMany10.sqlite');
       if(fs.existsSync(dbPath))fs.unlinkSync(dbPath);
       fs.copyFileSync(__dirname+'/orm/db/belongsToMany.default.sqlite', dbPath);
@@ -280,13 +279,13 @@ describe('orm test', ()=>{
       db.prepare('INSERT INTO tags (id, name) VALUES (?, ?)').run(1, 'foo');
       db.prepare('INSERT INTO tags (id, name) VALUES (?, ?)').run(2, 'tar');
 
-      const Tag = KOJS.require('models/Tag');
-      const t = new Tag(1, {database: db});
+      const Tag = KohanaJS.require('model/Tag');
+      const t = await ORM.factory(Tag, 1, {database: db});
 
       expect(t.name).toBe('foo');
     });
 
-    test('save', ()=>{
+    test('save', async ()=>{
       const dbPath = path.normalize(__dirname+'/orm/db/belongsTo11.sqlite');
       if(fs.existsSync(dbPath))fs.unlinkSync(dbPath);
       fs.copyFileSync(__dirname+'/orm/db/belongsTo.default.sqlite', dbPath);
@@ -294,9 +293,9 @@ describe('orm test', ()=>{
       db.prepare('INSERT INTO persons (first_name, last_name) VALUES (?, ?)').run('Peter', 'Pan');
       db.prepare('INSERT INTO addresses (person_id, address1) VALUES (?, ?)').run(1, 'Planet X');
 
-      const Person = KOJS.require('models/Person');
+      const Person = KohanaJS.require('model/Person');
 
-      const peter = new Person(1, {database: db} );
+      const peter = await ORM.factory(Person, 1, {database: db} );
       peter.last_name = 'Panther';
       peter.save();
 
@@ -304,7 +303,7 @@ describe('orm test', ()=>{
       expect(data.last_name).toBe('Panther');
     });
 
-    test('create new record', ()=>{
+    test('create new record', async ()=>{
       const dbPath = path.normalize(__dirname+'/orm/db/belongsTo12.sqlite');
       if(fs.existsSync(dbPath))fs.unlinkSync(dbPath);
       fs.copyFileSync(__dirname+'/orm/db/belongsTo.default.sqlite', dbPath);
@@ -312,24 +311,24 @@ describe('orm test', ()=>{
       db.prepare('INSERT INTO persons (first_name, last_name) VALUES (?, ?)').run('Peter', 'Pan');
       db.prepare('INSERT INTO addresses (person_id, address1) VALUES (?, ?)').run(1, 'Planet X');
 
-      const Person = KOJS.require('models/Person');
-      const alice = new Person(null, {database: db});
+      const Person = KohanaJS.require('model/Person');
+      const alice = ORM.create(Person, {database: db});
       alice.first_name = 'Alice';
       alice.last_name = 'Lee';
-      alice.save();
+      await alice.save();
 
       const data = db.prepare('SELECT * FROM persons WHERE first_name = ?').get('Alice');
       expect(data.last_name).toBe('Lee');
     });
 
-    test('add belongsToMany', ()=>{
+    test('add belongsToMany', async ()=>{
       const dbPath = path.normalize(__dirname+'/orm/db/belongsToMany13.sqlite');
       if(fs.existsSync(dbPath))fs.unlinkSync(dbPath);
       fs.copyFileSync(__dirname+'/orm/db/belongsToMany.default.sqlite', dbPath);
       const db = new Database(dbPath);
 
-      const Product = KOJS.require('models/Product');
-      const Tag     = KOJS.require('models/Tag');
+      const Product = KohanaJS.require('model/Product');
+      const Tag     = KohanaJS.require('model/Tag');
 
       const tagA = new Tag(null, {database: db});
       tagA.name = 'white';
@@ -354,43 +353,42 @@ describe('orm test', ()=>{
       expect(result2.length).toBe(2);
     })
 
-  test('add duplicate belongsToMany', ()=>{
+  test('add duplicate belongsToMany', async ()=>{
     const dbPath = path.normalize(__dirname+'/orm/db/belongsToMany14.sqlite');
     if(fs.existsSync(dbPath))fs.unlinkSync(dbPath);
     fs.copyFileSync(__dirname+'/orm/db/belongsToMany.default.sqlite', dbPath);
     const db = new Database(dbPath);
 
-    const Product = KOJS.require('models/Product');
-    const Tag     = KOJS.require('models/Tag');
+    const Product = KohanaJS.require('model/Product');
+    const Tag     = KohanaJS.require('model/Tag');
 
     const tagA = new Tag(null, {database: db});
     tagA.name = 'white';
-    tagA.save();
+    await tagA.save();
 
     const product = new Product(null, {database : db});
     product.name = 'milk';
-    product.save();
-    product.add(tagA);
-    product.save();
+    await product.save();
+    await product.add(tagA);
+    await product.save();
 
     const result1 = db.prepare('SELECT * from product_tags WHERE product_id = ?').all(product.id);
     expect(result1.length).toBe(1);
 
-    const addResult = product.add(tagA);
-    product.save();
+    await product.add(tagA);
+    await product.save();
     const result2 = db.prepare('SELECT * from product_tags WHERE product_id = ?').all(product.id);
     expect(result2.length).toBe(1);
-    expect(addResult).toBe(false);//model already linked;
   });
 
-  test('remove belongsToMany', ()=>{
+  test('remove belongsToMany', async ()=>{
     const dbPath = path.normalize(__dirname+'/orm/db/belongsToMany15.sqlite');
     if(fs.existsSync(dbPath))fs.unlinkSync(dbPath);
     fs.copyFileSync(__dirname+'/orm/db/belongsToMany.default.sqlite', dbPath);
     const db = new Database(dbPath);
 
-     const Product = KOJS.require('models/Product');
-    const Tag     = KOJS.require('models/Tag');
+     const Product = KohanaJS.require('model/Product');
+    const Tag     = KohanaJS.require('model/Tag');
 
     const tagA = new Tag(null, {database: db});
     tagA.name = 'white';
@@ -398,26 +396,26 @@ describe('orm test', ()=>{
 
     const product = new Product(null, {database : db});
     product.name = 'milk';
-    product.save();
-    product.add(tagA);
-    product.save();
+    await product.save();
+    await product.add(tagA);
+    await product.save();
 
     const result1 = db.prepare('SELECT * from product_tags WHERE product_id = ?').all(product.id);
     expect(result1.length).toBe(1);
 
-    product.remove(tagA);
-    product.save();
+    await product.remove(tagA);
+    await product.save();
     const result2 = db.prepare('SELECT * from product_tags WHERE product_id = ?').all(product.id);
     expect(result2.length).toBe(0);
   });
 
-  test('delete', ()=>{
+  test('delete', async ()=>{
     const dbPath = path.normalize(__dirname+'/orm/db/belongsToMany16.sqlite');
     if(fs.existsSync(dbPath))fs.unlinkSync(dbPath);
     fs.copyFileSync(__dirname+'/orm/db/belongsToMany.default.sqlite', dbPath);
     const db = new Database(dbPath);
 
-    const Product = KOJS.require('models/Product');
+    const Product = KohanaJS.require('model/Product');
     const product = new Product(null, {database : db});
     product.name = 'milk';
     product.save();
@@ -430,14 +428,14 @@ describe('orm test', ()=>{
     expect(result2.length).toBe(0);
   });
 
-  test('delete and remove links', ()=>{
+  test('delete and remove links', async ()=>{
     const dbPath = path.normalize(__dirname+'/orm/db/belongsToMany17.sqlite');
     if(fs.existsSync(dbPath))fs.unlinkSync(dbPath);
     fs.copyFileSync(__dirname+'/orm/db/belongsToMany.default.sqlite', dbPath);
     const db = new Database(dbPath);
 
-    const Product = KOJS.require('models/Product');
-    const Tag     = KOJS.require('models/Tag');
+    const Product = KohanaJS.require('model/Product');
+    const Tag     = KohanaJS.require('model/Tag');
 
     const tagA = new Tag(null, {database: db});
     tagA.name = 'white';
@@ -463,44 +461,44 @@ describe('orm test', ()=>{
 
   });
 
-  test('lazy load', ()=>{
+  test('lazy load', async ()=>{
     const dbPath = path.normalize(__dirname+'/orm/db/belongsToMany18.sqlite');
     if(fs.existsSync(dbPath))fs.unlinkSync(dbPath);
     fs.copyFileSync(__dirname+'/orm/db/belongsToMany.default.sqlite', dbPath);
     const db = new Database(dbPath);
     db.prepare('INSERT INTO products (name) VALUES (?)').run('bar');
 
-    const Product = KOJS.require('models/Product');
+    const Product = KohanaJS.require('model/Product');
 
     const product = new Product(null, {database : db});
-    product.load();
+    await product.load();
     expect(product.name).toBe(null);
 
     product.id = 1;
-    product.load();
+    await product.load();
 
     expect(product.name).toBe('bar');
 
   });
 
-  test('delete unsaved object', ()=>{
+  test('delete unsaved object', async ()=>{
     const dbPath = path.normalize(__dirname+'/orm/db/belongsToMany19.sqlite');
     if(fs.existsSync(dbPath))fs.unlinkSync(dbPath);
     fs.copyFileSync(__dirname+'/orm/db/belongsToMany.default.sqlite', dbPath);
     const db = new Database(dbPath);
     db.prepare('INSERT INTO products (name) VALUES (?)').run('bar');
 
-    const Product = KOJS.require('models/Product');
+    const Product = KohanaJS.require('model/Product');
     const product = new Product(null, {database : db});
     try{
-      product.delete();
+      await product.delete();
       expect('this line should not exec').toBe('');
     }catch(e){
       expect(e.message).toBe('ORM delete Error, no id defined');
     }
   })
 
-  test('handle hasMany target without tableName', ()=>{
+  test('handle hasMany target without tableName', async ()=>{
     const dbPath = path.normalize(__dirname+'/orm/db/belongsTo20.sqlite');
     if(fs.existsSync(dbPath))fs.unlinkSync(dbPath);
     fs.copyFileSync(__dirname+'/orm/db/belongsTo.default.sqlite', dbPath);
@@ -508,44 +506,44 @@ describe('orm test', ()=>{
     db.prepare('INSERT INTO persons (first_name, last_name) VALUES (?, ?)').run('Peter', 'Pan');
     db.prepare('INSERT INTO addresses (person_id, address1) VALUES (?, ?)').run(1, 'Planet X');
 
-    const Address = KOJS.require('models/Address');
-    const Person = KOJS.require('models/Person');
+    const Address = KohanaJS.require('model/Address');
+    const Person = KohanaJS.require('model/Person');
 
-    const peter = new Person(1, {database:db});
+    const peter = await ORM.factory(Person, 1, {database:db});
     expect(peter.first_name).toBe('Peter');
 
-    const home = new Address(1, {database:db});
+    const home = await ORM.factory(Address, 1, {database:db});
     expect(home.address1).toBe('Planet X');
 
-    const owner = home.belongsTo('person_id');
+    const owner = await home.belongsTo('person_id');
     expect(owner.first_name).toBe('Peter');
 
 
     const office = new Address(null, {database:db});
     office.address1 = 'Planet Y';
     office.person_id = peter.id;
-    office.save();
+    await office.save();
 
     expect(office.address1).toBe('Planet Y');
 
     Address.tableName = null;
     try{
-      const addresses = peter.hasMany(Address);
+      const addresses = await peter.hasMany(Address);
     }catch(e){
       expect(e.message).toBe('near "null": syntax error');
     }
 
   });
 
-  test('no database', ()=>{
+  test('no database', async ()=>{
     const ORM = require('../../classes/ORM');
     ORM.database = null;
 
-    const Person = KOJS.require('models/Person');
+    const Person = KohanaJS.require('model/Person');
     const peter = new Person();
 
     try{
-      peter.save();
+      await peter.save();
       expect('this line should not be run').toBe('');
     }catch(e){
       expect(e.message).toBe('Database not assigned.')
@@ -553,8 +551,8 @@ describe('orm test', ()=>{
 
   });
 
-  test('ORM idx', ()=>{
-    KOJS.init(__dirname+'/test11');
+  test('ORM idx', async ()=>{
+    KohanaJS.init(__dirname+'/test11');
 
     //idx is autoincrement primary key
     const targetPath = path.normalize(__dirname+'/orm/db/empty.sqlite');
@@ -580,25 +578,25 @@ UPDATE persons SET updated_at = CURRENT_TIMESTAMP WHERE id = old.id;
 END;
 `);
 
-    const Person = KOJS.require('models/Person');
+    const Person = KohanaJS.require('model/Person');
     const p = new Person(null, {database: db });
 
     p.first_name = 'Peter';
     p.last_name = 'Pan';
-    p.save();
+    await p.save();
 
     expect(p.idx).toBe(1);
 
     const a = new Person(null, {database: db });
     a.first_name = 'Alice';
     a.last_name = 'Lee';
-    a.save();
+    await a.save();
 
     expect(a.idx).toBe(2);
 
   })
 
-  test('ORM load fail', ()=>{
+  test('ORM load fail', async ()=>{
     const dbPath = path.normalize(__dirname+'/orm/db/belongsTo22.sqlite');
     if(fs.existsSync(dbPath))fs.unlinkSync(dbPath);
     fs.copyFileSync(__dirname+'/orm/db/belongsTo.default.sqlite', dbPath);
@@ -606,14 +604,14 @@ END;
     const db = new Database(dbPath);
     db.prepare('INSERT INTO persons (first_name, last_name) VALUES (?, ?)').run('Peter', 'Pan');
 
-    const Person = KOJS.require('models/Person');
-    const a = new Person('1000', {lazyload: true, database: db});
-    const loaded = a.load();
-    expect(loaded).toBe(false);
+    const Person = KohanaJS.require('model/Person');
+    const a = new Person('1000', {database: db});
+    const loaded = await a.load();
+    expect(loaded.created_at).toBe(null);
   })
 
-  test('ORM convert boolean to TRUE and FALSE when save', () => {
-    KOJS.init(__dirname+'/test13');
+  test('ORM convert boolean to TRUE and FALSE when save', async() => {
+    KohanaJS.init(__dirname+'/test13');
 
     //idx is autoincrement primary key
     const targetPath = path.normalize(__dirname+'/test13/db/empty.sqlite');
@@ -635,25 +633,25 @@ UPDATE persons SET updated_at = CURRENT_TIMESTAMP WHERE id = old.id;
 END;
 `);
 
-    const Person = KOJS.require('models/Person');
-    const p = new Person(null, {database: db });
+    const Person = KohanaJS.require('model/Person');
+    const p = ORM.create(Person, {database: db });
     p.enable = true;
-    p.save();
+    await p.save();
 
-    const r = new Person(p.id, {database: db});
+    const r = await ORM.factory(Person, p.id, {database: db});
 
     expect(r.enable ? true : false).toBe(true);
 
-    const p2 = new Person(null, {database: db});
+    const p2 = ORM.create(Person, {database: db});
     p2.enable = false;
-    p2.save();
+    await p2.save();
 
-    const r2 = new Person(p.id, {database: db});
+    const r2 = await ORM.factory(Person, p.id, {database: db});
     expect(r2.enable ? true : false).toBe(true);
   })
 
-  test('ORM find', () => {
-    KOJS.init(__dirname+'/test15');
+  test('ORM find', async () => {
+    KohanaJS.init(__dirname+'/test15');
 
     //idx is autoincrement primary key
     const targetPath = path.normalize(__dirname+'/test15/db/empty.sqlite');
@@ -677,25 +675,24 @@ UPDATE persons SET updated_at = CURRENT_TIMESTAMP WHERE id = old.id;
 END;
 `);
 
-    const Person = KOJS.require('models/Person');
-    const p = new Person(null, {database: db });
+    const Person = KohanaJS.require('model/Person');
+    const p = ORM.create(Person, {database: db });
     p.name = 'Alice';
     p.email = 'alice@example.com'
     p.enable = true;
-    p.save();
-    console.log(p.id);
+    await p.save();
 
-    const p2 = new Person(null, {database: db});
+    const p2 = ORM.create(Person, {database: db});
     p2.name = 'Bob';
     p2.enable = false;
-    p2.save();
+    await p2.save();
 
-    const r = new Person(null, {database: db});
-    r.find({name : 'Alice'});
+    const r = ORM.create(Person, {database: db});
+    await r.find({name : 'Alice'});
     expect(r.id).toBe(p.id);
 
-    const r2 = new Person(null, {database: db});
-    r2.find({});
+    const r2 = ORM.create(Person, {database: db});
+    await r2.find({});
     expect(r2.id).toBe(null);
   })
 });
