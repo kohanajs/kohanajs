@@ -88,7 +88,7 @@ const updateConfig = (kohana) => {
     const fileName = `${key}.js`;
     kohana.configPath.set(fileName, null); // never cache site config file.
     try{
-      const file = resolve(kohana, fileName, 'config', kohana.configPath, kohana.configForceUpdate);
+      const file = resolve(kohana, fileName, 'config', kohana.configPath, true);
       kohana.config[key] = require(file);
       delete require.cache[path.normalize(file)];
     }catch(e){
@@ -154,7 +154,7 @@ if(!global.kohanaJS){
   const KOJS = {};
   global.kohanaJS = KOJS;
 
-  KOJS.SYS_PATH = module.filename.replace(/[\/\\]KohanaJS\.js$/, '');
+  KOJS.SYS_PATH = __dirname;
   KOJS.EXE_PATH = KOJS.SYS_PATH;
   KOJS.APP_PATH = KOJS.SYS_PATH;
   KOJS.MOD_PATH = KOJS.SYS_PATH;
@@ -188,16 +188,21 @@ if(!global.kohanaJS){
   }
 
   KOJS.validateCache = () => {
-    updateConfig(KOJS);
-    if(KOJS.config.classes.cache === false){
+    if(KOJS.configForceUpdate){
+      updateConfig(KOJS);
+    }
+
+    if(!KOJS.config.classes.cache){
       clearRequireCache(KOJS);
     }
 
-    if(KOJS.config.view.cache === false){
+    if(!KOJS.config.view.cache){
       clearViewCache(KOJS);
     }
 
-    reloadModuleInit(KOJS);
+    if(!KOJS.config.classes.cache){
+      reloadModuleInit(KOJS);
+    }
   }
 
   KOJS.require = (pathToFile) => {

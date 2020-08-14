@@ -120,16 +120,16 @@ describe('KOJS test', ()=>{
       const Foo2 = kohanaJS.require('Foo');
       expect(Foo2.id).toBe(1);
 
-      kohanaJS.configForceUpdate = true;
+      kohanaJS.configForceUpdate = false;
       kohanaJS.config.classes.cache = true;
       kohanaJS.validateCache();
 
       const Foo3 = kohanaJS.require('Foo');
       expect(Foo3.id).toBe(1);
 
-      kohanaJS.validateCache();
       kohanaJS.config.classes.cache = false;
       kohanaJS.config.view.cache = false;
+      kohanaJS.validateCache();
       //jest override require, need to use reset modules to invalidate
       jest.resetModules();
 
@@ -138,6 +138,7 @@ describe('KOJS test', ()=>{
 
       const ins = new Foo4();
       expect(ins.getFooId()).toBe(2);
+
       kohanaJS.config.classes.cache = true;
       kohanaJS.config.view.cache = true;
       kohanaJS.validateCache();
@@ -147,7 +148,8 @@ describe('KOJS test', ()=>{
       jest.resetModules();
 
       expect(kohanaJS.config.view.cache).toBe(true);
-      kohanaJS.configForceUpdate = false;
+
+    kohanaJS.configForceUpdate = true;
   });
 
   test('resolveView', ()=>{
@@ -166,6 +168,7 @@ describe('KOJS test', ()=>{
       }
 
       kohanaJS.init(EXE_PATH);
+      kohanaJS.configForceUpdate = true;
       kohanaJS.configs.add('salt');
       kohanaJS.validateCache();
       expect(kohanaJS.config.salt).toBe(undefined);
