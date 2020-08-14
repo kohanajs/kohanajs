@@ -183,6 +183,10 @@ if(!global.kohanaJS){
     return KOJS;
   }
 
+  KOJS.updateConfig = ()=>{
+    updateConfig(KOJS);
+  }
+
   KOJS.addNodeModule = dirname => {
     KOJS.nodePackages.push(dirname);
   }
