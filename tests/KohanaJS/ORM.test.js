@@ -251,6 +251,10 @@ describe('orm test', ()=>{
 
         expect(tags[0].name).toBe('foo');
         expect(tags[1].name).toBe('tar');
+
+        const tags2 = await ORM.getAll(Tag);
+        expect(tags2[0].name).toBe('foo');
+        expect(tags2[1].name).toBe('tar');
     });
 
     test('instance get all from model', async ()=>{
@@ -319,7 +323,17 @@ describe('orm test', ()=>{
 
       const data = db.prepare('SELECT * FROM persons WHERE first_name = ?').get('Alice');
       expect(data.last_name).toBe('Lee');
+
+      ORM.database = db;
+      const bob = ORM.create(Person);
+      bob.first_name = 'Bob';
+      bob.last_name = 'Chan';
+      await bob.save();
+
+      const data2 = db.prepare('SELECT * FROM persons WHERE first_name = ?').get('Bob');
+      expect(data2.last_name).toBe('Chan');
     });
+
 
     test('add belongsToMany', async ()=>{
       const dbPath = path.normalize(__dirname+'/orm/db/belongsToMany13.sqlite');
@@ -694,5 +708,29 @@ END;
     const r2 = ORM.create(Person, {database: db});
     await r2.find({});
     expect(r2.id).toBe(null);
+  })
+
+  test('abstract ORM adapter function coverage', async ()=>{
+    const Person = KohanaJS.require('model/Person');
+    const Adapter = require('../../classes/ORMAdapter');
+    const p = ORM.create(Person);
+    const a = new Adapter(p, null);
+    a.defaultID();
+    a.processValues();
+    a.getInsertStatement();
+    a.getUpdateStatement();
+    await a.load();
+    await a.save('test');
+    await a.add(p, 0, 'test', 'lk', 'fk');
+    await a.remove(p, 'test', 'lk', 'fk');
+    await a.delete();
+    await a.hasMany('test', 'key');
+    await a.belongsToMany('test', 'test', 'lk', 'fk');
+    await a.all()
+    await a.find([],[]);
+
+    expect(true).toBe(true);
+
+
   })
 });

@@ -3,7 +3,6 @@ const ORM = require('../../../../../../classes/ORM');
 class Person extends ORM{
   constructor(id, options) {
     super(id, options);
-    if(id)return;
 
     this.enable = null;
     this.name = null;

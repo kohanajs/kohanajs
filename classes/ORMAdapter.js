@@ -41,6 +41,7 @@ class ORMAdapter{
 
   async delete(){}
   async hasMany(tableName, key){}
+  async belongsToMany(modelTableName, jointTableName , lk, fk){}
   async all(){}
   async find(keys, values){}
 }

@@ -32,6 +32,10 @@ module.exports = {
   Controller : core.Controller,
   ControllerMixin : core.ControllerMixin,
   ORM: require('./classes/ORM'),
+  ORMAdapter: require('./classes/ORMAdapter'),
+  ORMAdapterSQLite : require('./classes/ORMAdapter/SQLite'),
+  addNodeModule: KohanaJS.addNodeModule,
+
   KohanaJS : KohanaJS,
   KOJS: KohanaJS,
   init : KohanaJS.init,

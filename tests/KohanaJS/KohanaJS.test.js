@@ -1,71 +1,71 @@
 const path = require('path');
 
 describe('KOJS test', ()=>{
-  let KOJS;
+  let kohanaJS;
   const EXE_PATH = __dirname.replace(/\/tests$/, '') + '/server';
 
   beforeEach(()=>{
-    KOJS = require('../../KohanaJS');
+    kohanaJS = require('../../KohanaJS');
   });
 
   test('APP Path', () => {
-      KOJS.init(EXE_PATH);
-      expect(KOJS.APP_PATH).toBe(`${EXE_PATH}/application`);
+      kohanaJS.init(EXE_PATH);
+      expect(kohanaJS.APP_PATH).toBe(`${EXE_PATH}/application`);
   });
 
-  test('KOJS.require', () => {
+  test('kohanaJS.require', () => {
       const packagePath = `${__dirname}/test1/`;
-      KOJS.init(packagePath);
+      kohanaJS.init(packagePath);
 
-      expect(KOJS.MOD_PATH).toBe(`${packagePath}/modules`);
+      expect(kohanaJS.MOD_PATH).toBe(`${packagePath}/modules`);
 
-      const Test = KOJS.require('Test');
+      const Test = kohanaJS.require('Test');
       const t = new Test();
       expect(t.getFoo()).toBe('bar');
   });
 
   test('switch package', () => {
       let testDir = __dirname;
-      KOJS.init(`${testDir}/test1`);
-      expect(KOJS.MOD_PATH).toBe(`${testDir}/test1/modules`);
+      kohanaJS.init(`${testDir}/test1`);
+      expect(kohanaJS.MOD_PATH).toBe(`${testDir}/test1/modules`);
 
-      let T = KOJS.require('Test');
+      let T = kohanaJS.require('Test');
       const t1 = new T();
       expect(t1.getFoo()).toBe('bar');
 
-      const Foo1 = KOJS.require('Foo');
+      const Foo1 = kohanaJS.require('Foo');
       const f1 = new Foo1();
       expect(f1.getFoo()).toBe('fooo');
 
-      KOJS.init(`${testDir}/test2`);
-      expect(KOJS.MOD_PATH).toBe(`${testDir}/test2/modules`);
+      kohanaJS.init(`${testDir}/test2`);
+      expect(kohanaJS.MOD_PATH).toBe(`${testDir}/test2/modules`);
 
-      T = KOJS.require('Test');
+      T = kohanaJS.require('Test');
       const t2 = new T();
       expect(t2.getFoo()).toBe('tar');
 
       try{
-          const Foo2 = KOJS.require('Foo');
+          const Foo2 = kohanaJS.require('Foo');
           const f2 = new Foo2();
       }catch(e){
-          expect(e.message.replace(/ {[^}]+}/, '')).toBe('KohanaJS resolve path error: path Foo.js not found. classes , ');
+          expect(e.message.replace(/ {[^}]+}/, '')).toBe('KohanaJS resolve path error: path Foo.js not found. classes , {} ');
       }
   });
 
   test('application folder', () => {
       let testDir = __dirname;
-      KOJS.init(`${testDir}/test1`);
-      expect(KOJS.APP_PATH).toBe(`${testDir}/test1/application`);
+      kohanaJS.init(`${testDir}/test1`);
+      expect(kohanaJS.APP_PATH).toBe(`${testDir}/test1/application`);
 
-      const Foo1 = KOJS.require('Foo');
+      const Foo1 = kohanaJS.require('Foo');
       const f1 = new Foo1();
       expect(f1.getFoo()).toBe('fooo');
 
-      KOJS.init(`${testDir}/test2`);
-      expect(KOJS.APP_PATH).toBe(`${testDir}/test2/application`);
+      kohanaJS.init(`${testDir}/test2`);
+      expect(kohanaJS.APP_PATH).toBe(`${testDir}/test2/application`);
 
       try{
-          const Foo2 = KOJS.require('Foo');
+          const Foo2 = kohanaJS.require('Foo');
           const f2 = new Foo2();
       }catch(e){
           expect(e.message.replace(/ {[^}]+}/, '')).toBe('KohanaJS resolve path error: path Foo.js not found. classes , {} ');
@@ -74,15 +74,15 @@ describe('KOJS test', ()=>{
 
   test('custom module folder', () => {
       let testDir = __dirname;
-      KOJS.init(`${testDir}/test1`, `${testDir}/test3/application`,`${testDir}/test1/modules`);
-      expect(KOJS.APP_PATH).toBe(`${testDir}/test3/application`);
-      expect(KOJS.MOD_PATH).toBe(`${testDir}/test1/modules`);
+      kohanaJS.init(`${testDir}/test1`, `${testDir}/test3/application`,`${testDir}/test1/modules`);
+      expect(kohanaJS.APP_PATH).toBe(`${testDir}/test3/application`);
+      expect(kohanaJS.MOD_PATH).toBe(`${testDir}/test1/modules`);
 
-      const Foo1 = KOJS.require('Foo');//test3/Foo
+      const Foo1 = kohanaJS.require('Foo');//test3/Foo
       const f1 = new Foo1();
       expect(f1.getFoo()).toBe('waa');
 
-      const Test = KOJS.require('Test');
+      const Test = kohanaJS.require('Test');
       const t = new Test();
       expect(t.getFoo()).toBe('bar');
 
@@ -90,16 +90,16 @@ describe('KOJS test', ()=>{
 
   test('path not found', ()=>{
       try{
-          KOJS.require('NotFound');
+          kohanaJS.require('NotFound');
       }catch(e){
-          expect(e.message.replace(/ {[^}]+}/, '')).toBe('KohanaJS resolve path error: path NotFound.js not found. classes , ');
+          expect(e.message.replace(/ {[^}]+}/, '')).toBe('KohanaJS resolve path error: path NotFound.js not found. classes , {} ');
       }
   });
 
   test('inline modules init', ()=>{
       let testDir = __dirname;
       expect(global.testInit).toBe(undefined);
-      KOJS.init(`${testDir}/test4`);
+      kohanaJS.init(`${testDir}/test4`);
       expect(global.testInit).toBe(true);
       delete global.testInit;
   });
@@ -107,41 +107,52 @@ describe('KOJS test', ()=>{
   test('npm modules init ', ()=>{
       let testDir = __dirname;
       expect(global.testInit).toBe(undefined);
-      KOJS.init(`${testDir}/test5`);
+      kohanaJS.init(`${testDir}/test5`);
       expect(global.testInit).toBe(true);
   });
 
   test('clear cache', ()=>{
       let testDir = __dirname;
-      KOJS.init(`${testDir}/test6`);
-      const Foo = KOJS.require('Foo');
+      kohanaJS.init(`${testDir}/test6`);
+      const Foo = kohanaJS.require('Foo');
       expect(Foo.id).toBe(1);
 
-      const Foo2 = KOJS.require('Foo');
+      const Foo2 = kohanaJS.require('Foo');
       expect(Foo2.id).toBe(1);
 
-      KOJS.config.cache.exports = true;
-      KOJS.validateCache();
+      kohanaJS.configForceUpdate = true;
+      kohanaJS.config.classes.cache = true;
+      kohanaJS.validateCache();
 
-      const Foo3 = KOJS.require('Foo');
+      const Foo3 = kohanaJS.require('Foo');
       expect(Foo3.id).toBe(1);
 
-      KOJS.config.cache.exports = false;
-      KOJS.config.cache.view = false;
-      KOJS.validateCache();
+      kohanaJS.validateCache();
+      kohanaJS.config.classes.cache = false;
+      kohanaJS.config.view.cache = false;
       //jest override require, need to use reset modules to invalidate
       jest.resetModules();
 
-      const Foo4 = KOJS.require('Foo');
+      const Foo4 = kohanaJS.require('Foo');
       expect(Foo4.id).toBe(2);
 
       const ins = new Foo4();
       expect(ins.getFooId()).toBe(2);
+      kohanaJS.config.classes.cache = true;
+      kohanaJS.config.view.cache = true;
+      kohanaJS.validateCache();
+      //change config after validateCache. otherwise the config file will over write it.
+
+      //jest override require, need to use reset modules to invalidate
+      jest.resetModules();
+
+      expect(kohanaJS.config.view.cache).toBe(true);
+      kohanaJS.configForceUpdate = false;
   });
 
   test('resolveView', ()=>{
-      KOJS.init(`${__dirname}/test7`);
-      const viewFile = KOJS.resolveView('test.html');
+      kohanaJS.init(`${__dirname}/test7`);
+      const viewFile = kohanaJS.resolveView('test.html');
       expect(viewFile).toBe(`${__dirname}/test7/application/views/test.html`);
   });
 
@@ -150,28 +161,32 @@ describe('KOJS test', ()=>{
       const EXE_PATH = `${__dirname}/test8`;
       const APP_PATH = EXE_PATH + '/application';
 
-      if(fs.existsSync(APP_PATH + '/config/site.js')){
-        fs.unlinkSync(APP_PATH+'/config/site.js');
+      if(fs.existsSync(APP_PATH + '/config/salt.js')){
+        fs.unlinkSync(APP_PATH+'/config/salt.js');
       }
 
-      KOJS.init(EXE_PATH);
-      expect(KOJS.config.salt).toBe('theencryptsaltatleast32character');
+      kohanaJS.init(EXE_PATH);
+      kohanaJS.configs.add('salt');
+      kohanaJS.validateCache();
+      expect(kohanaJS.config.salt).toBe(undefined);
 
 
-      fs.copyFileSync(APP_PATH+'/config/site.default.js', APP_PATH+'/config/site.js');
+      fs.copyFileSync(APP_PATH+'/config/salt.default.js', APP_PATH+'/config/salt.js');
       jest.resetModules();
-      KOJS.validateCache();
-      expect(KOJS.config.salt).toBe('default salt 1');
+      kohanaJS.validateCache();
+      expect(kohanaJS.config.salt).toBe('default salt 1');
 
-      fs.unlinkSync(APP_PATH+'/config/site.js');
+      fs.unlinkSync(APP_PATH+'/config/salt.js');
       jest.resetModules();
-      KOJS.validateCache();
-      expect(KOJS.config.salt).toBe('theencryptsaltatleast32character');
+      kohanaJS.validateCache();
+      expect(kohanaJS.config.salt).toBe(undefined);
 
-/*      fs.copyFileSync(APP_PATH+'/config/site.default2.js', APP_PATH+'/config/site.js');
+    /*
+      fs.copyFileSync(APP_PATH+'/config/salt.default2.js', APP_PATH+'/config/salt.js');
       jest.resetModules();
-      KOJS.validateCache();
-      expect(KOJS.config.salt).toBe('default salt 2');*/
+      kohanaJS.validateCache();
+      console.log(kohanaJS.config)
+      expect(kohanaJS.config.salt).toBe('default salt 2');*/
 
       //clean up
 //      fs.unlinkSync(path.normalize(APP_PATH+'/config/site.js'));
@@ -179,88 +194,88 @@ describe('KOJS test', ()=>{
 
   test('setPath default value', ()=>{
     const path = require('path');
-    KOJS.init();
-    expect(path.normalize(KOJS.EXE_PATH + '/')).toBe(path.normalize(__dirname+'/../../'));
+    kohanaJS.init();
+    expect(path.normalize(kohanaJS.EXE_PATH + '/')).toBe(path.normalize(__dirname+'/../../'));
   });
 
   test('set all init value', ()=>{
-    KOJS.init(
+    kohanaJS.init(
       __dirname+'/test1',
       __dirname+'/test2/application',
       __dirname+'/test3/modules');
-    expect(KOJS.EXE_PATH).toBe(__dirname+'/test1');
-    expect(KOJS.APP_PATH).toBe(__dirname+'/test2/application');
-    expect(KOJS.MOD_PATH).toBe(__dirname+'/test3/modules');
+    expect(kohanaJS.EXE_PATH).toBe(__dirname+'/test1');
+    expect(kohanaJS.APP_PATH).toBe(__dirname+'/test2/application');
+    expect(kohanaJS.MOD_PATH).toBe(__dirname+'/test3/modules');
   });
 
   test('test default MODPATH ', ()=>{
-    KOJS.init(
+    kohanaJS.init(
       __dirname+'/test1',
       __dirname+'/test2/application');
-    expect(KOJS.EXE_PATH).toBe(__dirname+'/test1');
-    expect(KOJS.APP_PATH).toBe(__dirname+'/test2/application');
-    expect(KOJS.MOD_PATH).toBe(__dirname+'/test1/modules');
+    expect(kohanaJS.EXE_PATH).toBe(__dirname+'/test1');
+    expect(kohanaJS.APP_PATH).toBe(__dirname+'/test2/application');
+    expect(kohanaJS.MOD_PATH).toBe(__dirname+'/test1/modules');
   });
 
-  test('KOJS nodePackages without init', ()=>{
+  test('kohanaJS nodePackages without init', ()=>{
     let testDir = __dirname;
-    KOJS.init(`${testDir}/test9`);
-    expect(KOJS.nodePackages.length).toBe(2);
-    //KOJS will load bootstrap from test9/application/bootstrap.js
+    kohanaJS.init(`${testDir}/test9`);
+    expect(kohanaJS.nodePackages.length).toBe(2);
+    //kohanaJS will load bootstrap from test9/application/bootstrap.js
     //
   });
 
-  test('KOJS require file with extension', ()=>{
-    KOJS.init(`${__dirname}/test10`);
-    const Foo = KOJS.require('Foo.js');
+  test('kohanaJS require file with extension', ()=>{
+    kohanaJS.init(`${__dirname}/test10`);
+    const Foo = kohanaJS.require('Foo.js');
     const ins = new Foo();
     expect(ins.getFoo()).toBe('bar');
   });
 
   test('test default SYMPATH ', ()=>{
-    KOJS.init(
+    kohanaJS.init(
     __dirname+'/test1',
     __dirname+'/test2/application');
 
-    expect(KOJS.SYM_PATH).toBe(__dirname+'/test1/system');
+    expect(kohanaJS.SYM_PATH).toBe(__dirname+'/test1/system');
   });
 
   test('inline system init', ()=>{
     let testDir = __dirname;
     expect(global.testInit2).toBe(undefined);
-    KOJS.init(`${testDir}/test12`);
+    kohanaJS.init(`${testDir}/test12`);
     expect(global.testInit2).toBe(true);
     delete global.testInit2;
 
-    const Woo = KOJS.require('Woo');
+    const Woo = kohanaJS.require('Woo');
     const w = new Woo();
     expect(w.sayHi()).toBe('Hi!!!');
   });
 
   test('should fail if require contain ../ ', ()=>{
     try{
-      KOJS.require('../hello');
+      kohanaJS.require('../hello');
       expect('this line should not run').toBe('');
     }catch(e){
       expect(e.message).toBe('invalid require path');
     }
 
     try{
-      KOJS.require('foo/../hello');
+      kohanaJS.require('foo/../hello');
       expect('this line should not run').toBe('');
     }catch(e){
       expect(e.message).toBe('invalid require path');
     }
   })
 
-  test('specific KOJS.require file', ()=>{
-    KOJS.classPath['foo/Bar.js'] = path.normalize(__dirname + '/test14/Bar');
-    const Bar = KOJS.require('foo/Bar');
+  test('specific kohanaJS.require file', ()=>{
+    kohanaJS.classPath.set('foo/Bar.js' , path.normalize(__dirname + '/test14/Bar'));
+    const Bar = kohanaJS.require('foo/Bar');
     const bar = new Bar();
     expect(bar.greeting()).toBe('Hello from Bar');
 
-    KOJS.classPath['kaa/Tar.js'] = path.normalize(__dirname + '/test14/Tar.js');
-    const Tar = KOJS.require('kaa/Tar.js');
+    kohanaJS.classPath.set('kaa/Tar.js', path.normalize(__dirname + '/test14/Tar.js'));
+    const Tar = kohanaJS.require('kaa/Tar.js');
     const tar = new Tar();
     expect(tar.greeting()).toBe('Hello from Tar');
   })

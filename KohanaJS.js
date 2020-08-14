@@ -29,12 +29,12 @@ const {View} = require('@kohanajs/core-mvc');
 const path = require('path');
 
 //private methods
-const resolve = (kohana, pathToFile, prefixPath, store)=>{
+const resolve = (kohana, pathToFile, prefixPath, store, forceUpdate= false)=>{
   if(/\.\./.test(pathToFile)){
     throw new Error('invalid require path');
   }
 
-  if(!store[pathToFile]){
+  if(!store.get(pathToFile) || forceUpdate){
     //search application, then modules, then system
     const fetchList = [pathToFile, `${kohana.APP_PATH}/${prefixPath}/${pathToFile}`];
 
@@ -54,17 +54,17 @@ const resolve = (kohana, pathToFile, prefixPath, store)=>{
     for(let i=0; i<fetchList.length; i++){
       const x = fetchList[i];
       if(fs.existsSync(path.normalize(x))){
-        store[pathToFile] = x;
+        store.set(pathToFile,  x);
         break;
       }
     }
 
-    if(!store[pathToFile]){
+    if(!store.get(pathToFile)){
       throw new Error(`KohanaJS resolve path error: path ${pathToFile} not found. ${prefixPath} , ${JSON.stringify(store)} `);
     }
   }
 
-  return store[pathToFile];
+  return store.get(pathToFile);
 };
 
 const setPath = (kohana, EXE_PATH, APP_PATH, MOD_PATH, SYM_PATH) => {
@@ -74,31 +74,41 @@ const setPath = (kohana, EXE_PATH, APP_PATH, MOD_PATH, SYM_PATH) => {
   kohana.SYM_PATH = SYM_PATH || KohanaJS.EXE_PATH + '/system';
 };
 
-const loadBootStrape = (kohana) => {
+const loadBootStrap = (kohana) => {
   const bootstrapFile = `${kohana.APP_PATH}/bootstrap.js`;
-  if(fs.existsSync(path.normalize(bootstrapFile))){
-    kohana.bootstrap = require(bootstrapFile);
-  }
+  if(!fs.existsSync(path.normalize(bootstrapFile)))return;
+
+  kohana.bootstrap = require(bootstrapFile);
 }
 
 const updateConfig = (kohana) => {
-  kohana.configPath['site.js'] = null; // never cache site config file.
-  const file = resolve(kohana, 'site.js', 'config', kohana.configPath);
-
-  kohana.config = require(file);
-  delete require.cache[path.normalize(file)];
+  kohana.config = {};
+  //search all config files
+  kohana.configs.forEach(key =>{
+    const fileName = `${key}.js`;
+    kohana.configPath.set(fileName, null); // never cache site config file.
+    try{
+      const file = resolve(kohana, fileName, 'config', kohana.configPath, kohana.configForceUpdate);
+      kohana.config[key] = require(file);
+      delete require.cache[path.normalize(file)];
+    }catch(e){
+      //file not found.
+      kohana.config[key] = undefined;
+    }
+  })
 };
 
 const clearRequireCache = (kohana)=>{
-  for(let name in kohana.classPath){
-    delete require.cache[path.normalize(kohana.classPath[name])];
-  }
-  kohana.classPath = {};
-  kohana.configPath = {};
+  kohana.classPath.forEach(v =>{
+    delete require.cache[v];
+  })
+
+  kohana.classPath = new Map();
+  kohana.configPath = new Map();
 };
 
 const clearViewCache = (kohana)=>{
-  kohana.viewPath = {};
+  kohana.viewPath = new Map();
   View.defaultViewClass.clearCache();
 };
 
@@ -107,31 +117,36 @@ const reloadModuleInit = (kohana) => {
   if(kohana.bootstrap.modules){
     kohana.bootstrap.modules.forEach(x => {
       const initPath = `${kohana.MOD_PATH}/${x}/init.js`;
+      const filePath = path.normalize(initPath);
+      if(!fs.existsSync(filePath))return;
 
-      if(fs.existsSync(path.normalize(initPath))){
-        require(initPath);
-        delete require.cache[path.normalize(initPath)];
-      }
+      //load the init file
+      require(initPath);
+      //do not cache it.
+      delete require.cache[filePath];
     });
   }
 
+  //activate init.js in system
   if(kohana.bootstrap.system){
     kohana.bootstrap.system.forEach(x => {
       const initPath = `${kohana.SYM_PATH}/${x}/init.js`;
-      if(fs.existsSync(path.normalize(initPath))){
-        require(initPath);
-        delete require.cache[path.normalize(initPath)];
-      }
+      const filePath = path.normalize(initPath);
+      if(!fs.existsSync(filePath))return;
+
+      require(initPath);
+      delete require.cache[filePath];
     });
   }
 
   //activate init.js in require('KOJSmvc-sample-module')
   kohana.nodePackages.forEach(x =>{
     const initPath = `${x}/init.js`;
-    if(fs.existsSync(path.normalize(initPath))){
-      require(initPath);
-      delete require.cache[path.normalize(initPath)];
-    }
+    const filePath = path.normalize(initPath);
+    if(!fs.existsSync(filePath))return;
+
+    require(initPath);
+    delete require.cache[filePath];
   })
 };
 
@@ -144,39 +159,41 @@ if(!global.kohanaJS){
   KOJS.APP_PATH = KOJS.SYS_PATH;
   KOJS.MOD_PATH = KOJS.SYS_PATH;
   KOJS.SYM_PATH = KOJS.SYS_PATH;
-  KOJS.config   = require('./config/site');
+  KOJS.config   = {classes:{}, view:{}};
+  KOJS.configs  = new Set();
+  KOJS.configForceUpdate = true;
   KOJS.nodePackages = [];
-  KOJS.classPath  = {}; //{'ORM'          => 'APP_PATH/classes/ORM.js'}
-  KOJS.viewPath   = {}; //{'layout/index' => 'APP_PATH/views/layout/index'}
-  KOJS.configPath = {}; //{'site.js       => 'APP_PATH/config/site.js'}
+  KOJS.classPath  = new Map(); //{'ORM'          => 'APP_PATH/classes/ORM.js'}
+  KOJS.viewPath   = new Map(); //{'layout/index' => 'APP_PATH/views/layout/index'}
+  KOJS.configPath = new Map(); //{'site.js       => 'APP_PATH/config/site.js'}
   KOJS.bootstrap  = {modules: [], system: []};
 
   KOJS.init = (EXE_PATH = null, APP_PATH = null, MOD_PATH = null, SYM_PATH = null) => {
-    KOJS.classPath = {};
-    KOJS.viewPath = {};
+    KOJS.configs   = new Set(['classes', 'view']);
+    KOJS.classPath = new Map();
+    KOJS.viewPath = new Map();
     KOJS.nodePackages = [];
 
     //set paths
     setPath(KOJS, EXE_PATH, APP_PATH, MOD_PATH, SYM_PATH);
-    loadBootStrape(KOJS);
+    loadBootStrap(KOJS);
     updateConfig(KOJS);
     reloadModuleInit(KOJS);
 
     return KOJS;
   }
 
-  KOJS.addNodeModules = (packageFolder) => {
-    //register by require('KOJSmvc-module');
-    KOJS.nodePackages.push(packageFolder.replace(/[\/\\]index\.js$/, ''));
+  KOJS.addNodeModule = dirname => {
+    KOJS.nodePackages.push(dirname);
   }
 
   KOJS.validateCache = () => {
     updateConfig(KOJS);
-    if(KOJS.config.cache.exports === false){
+    if(KOJS.config.classes.cache === false){
       clearRequireCache(KOJS);
     }
 
-    if(KOJS.config.cache.view === false){
+    if(KOJS.config.view.cache === false){
       clearViewCache(KOJS);
     }
 
