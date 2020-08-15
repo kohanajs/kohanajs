@@ -117,7 +117,7 @@ class ORM extends Model{
     const lk = this.constructor.jointTablePrefix + '_id';
     const fk = model.constructor.jointTablePrefix + '_id';
 
-    await this.adapter.add(model, weight, jointTableName, lk, fk);
+    await this.adapter.add([model], weight, jointTableName, lk, fk);
   }
 
   /**
@@ -131,6 +131,12 @@ class ORM extends Model{
     const fk = model.constructor.jointTablePrefix + '_id';
 
     await this.adapter.remove(model, jointTableName, lk, fk);
+  }
+
+  async removeAll(Model){
+    const jointTableName = `${this.constructor.jointTablePrefix}_${Model.tableName}`;
+    const lk = this.constructor.jointTablePrefix + '_id';
+    await this.adapter.removeAll(jointTableName, lk);
   }
 
   async delete(){
@@ -185,6 +191,10 @@ class ORM extends Model{
     return this.adapter.all()
   }
 
+  async filter(key='id', values=[]){
+    return this.adapter.filter(key, values);
+  }
+
   /**
    * find exist instance from values
    * @param {Object} values
@@ -195,7 +205,6 @@ class ORM extends Model{
     if(ks.length <= 0)return;
 
     const result = await this.adapter.find(ks, vs);
-
     Object.assign(this, result);
   }
 }
@@ -225,6 +234,13 @@ ORM.factory = async (Model, id, options ={}) => {
 ORM.getAll = async (Model, options={}) => {
   return await ORM.create(Model, options).all();
 }
+
+ORM.filterBy = async (Model, key, values, options={}) => {
+  return await ORM.create(Model, options).filter(key, values);
+}
+
+ORM.classPrefix = 'model/';
+ORM.prepend = modelName => ORM.classPrefix + modelName;
 
 Object.freeze(ORM.prototype);
 module.exports = ORM;

@@ -22,13 +22,13 @@ class ORMAdapter{
 
   /**
    * add belongsToMany
-   * @param {ORM} model
+   * @param {ORM[]} models
    * @param {number} weight
    * @param {string} jointTableName
    * @param {string} lk
    * @param {string} fk
    */
-  async add(model, weight, jointTableName, lk, fk){}
+  async add(models, weight, jointTableName, lk, fk){}
 
   /**
    * remove
@@ -39,11 +39,15 @@ class ORMAdapter{
    */
   async remove(model, jointTableName, lk, fk){}
 
+  async removeAll(jointTableName, lk){}
+
   async delete(){}
   async hasMany(tableName, key){}
   async belongsToMany(modelTableName, jointTableName , lk, fk){}
-  async all(){}
   async find(keys, values){}
+
+  async all(){}
+  async filter(key, values){}
 }
 
 module.exports = ORMAdapter;

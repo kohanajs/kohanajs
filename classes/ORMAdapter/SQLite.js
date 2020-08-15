@@ -37,12 +37,18 @@ class ORMAdapterSQLite extends ORMAdapter{
     this.database.prepare(`DELETE FROM ${tableName} WHERE id = ?`).run(this.client.id);
   }
 
-  async add(model, weight, jointTableName, lk, fk){
-    this.database.prepare(`INSERT OR IGNORE INTO ${jointTableName} (${lk}, ${fk}, weight) VALUES (?, ?, ?)`).run(this.client.id, model.id, weight);
+  async add(models, weight, jointTableName, lk, fk){
+    const ids = models.map(x=> x.id);
+    const values = models.map((x, i) =>`(${this.client.id} , ?, ${weight + (i * 0.000001)})`);
+    this.database.prepare(`INSERT OR IGNORE INTO ${jointTableName} (${lk}, ${fk}, weight) VALUES ${values.join(', ')}`).run(...ids);
   }
 
   async remove(model, jointTableName, lk, fk){
     this.database.prepare(`DELETE FROM ${jointTableName} WHERE ${lk} = ? AND ${fk} = ?`).run(this.client.id, model.id);
+  }
+
+  async removeAll(jointTablename, lk){
+    this.database.prepare(`DELETE FROM ${jointTablename} WHERE ${lk} = ?`).run(this.client.id);
   }
 
   async hasMany(tableName, key){
@@ -54,6 +60,13 @@ class ORMAdapterSQLite extends ORMAdapter{
     return this.database.prepare(sql).all(this.client.id);
   }
 
+  async find(keys, values){
+    const tableName = this.client.constructor.tableName;
+    const sql = `SELECT * FROM ${tableName} WHERE ${keys.map( k => `${k} = ?`).join(' AND ')}`;
+
+    return this.database.prepare(sql).get(...values);
+  }
+
   async all(){
     const model = this.client.constructor;
     return this.database.prepare(`SELECT * from ${model.tableName}`)
@@ -61,11 +74,9 @@ class ORMAdapterSQLite extends ORMAdapter{
       .map(x => Object.assign(new model(null, {database: this.database}), x));
   }
 
-  async find(keys, values){
-    const tableName = this.client.constructor.tableName;
-    const sql = `SELECT * FROM ${tableName} WHERE ${keys.map( k => `${k} = ?`).join(' AND ')}`;
-
-    return this.database.prepare(sql).get(...values);
+  async filter(key, values){
+    const Model = this.client.constructor;
+    return this.database.prepare(`SELECT * FROM ${Model.tableName} WHERE id in (${values.join(', ')})`).all();
   }
 }
 
