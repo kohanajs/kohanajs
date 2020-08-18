@@ -1,40 +1,33 @@
 const ORMAdapter = require('../ORMAdapter');
 
 class ORMAdapterSQLite extends ORMAdapter{
-  processValues(){
-    return this.client.columns.map(x => {
-      const value = this.client[x];
-      if(typeof value === 'boolean'){
-        return this.client[x] ? 1 : 0;
-      }
-      return this.client[x]
-    });
-  }
+  static OP = Object.assign({}, ORMAdapter.OP, {
+    NOT_EQUAL: '!=',
+    TRUE : 1,
+    FALSE : 0,
+  })
 
-  getUpdateStatement() {
-    return `UPDATE ${this.client.constructor.tableName} SET ${this.client.columns.map(x => `${x} = ?`).join(', ')} WHERE id = ?`;
-  }
-
-  getInsertStatement(){
-    return `INSERT OR IGNORE INTO ${this.client.constructor.tableName} (${this.client.columns.join(', ')}, id) VALUES (?, ${this.client.columns.map(x => `?`).join(', ')})`;
+  translateValue(values){
+    return values.map(x =>{
+      if(typeof x === 'boolean')return x ? 1 : 0;
+      return x;
+    })
   }
 
   async load(){
-     return this.database.prepare(`SELECT * from ${this.client.constructor.tableName} WHERE id = ?`).get(this.client.id);
+     return this.database.prepare(`SELECT * from ${this.tableName} WHERE id = ?`).get(this.client.id);
   }
 
-  async save(sql, values){
-    if(!this.database)throw new Error('Database not assigned.');
-    const result = this.database.prepare(sql).run(...values);
+  async update(values){
+    this.database.prepare(`UPDATE ${this.tableName} SET ${this.client.columns.map(x => `${x} = ?`).join(', ')} WHERE id = ?`).run(...values, this.client.id);
+  }
 
-    if(this.client.idx !== undefined){
-      this.client.idx = result.lastInsertRowid;
-    }
+  async insert(values){
+    this.database.prepare(`INSERT OR IGNORE INTO ${this.tableName} (${this.client.columns.join(', ')}, id) VALUES (?, ${this.client.columns.map(x => `?`).join(', ')})`).run(...values, this.client.id);
   }
 
   async delete(){
-    const tableName = this.client.constructor.tableName;
-    this.database.prepare(`DELETE FROM ${tableName} WHERE id = ?`).run(this.client.id);
+    this.database.prepare(`DELETE FROM ${this.tableName} WHERE id = ?`).run(this.client.id);
   }
 
   async add(models, weight, jointTableName, lk, fk){
@@ -56,27 +49,28 @@ class ORMAdapterSQLite extends ORMAdapter{
   }
 
   async belongsToMany(modelTableName, jointTableName , lk, fk){
-    const sql = `SELECT ${modelTableName}.* FROM ${modelTableName} JOIN ${jointTableName} ON ${modelTableName}.id = ${jointTableName}.${fk} WHERE ${jointTableName}.${lk} = ? ORDER BY ${jointTableName}.weight`;
-    return this.database.prepare(sql).all(this.client.id);
+    return this.database.prepare(`SELECT ${modelTableName}.* FROM ${modelTableName} JOIN ${jointTableName} ON ${modelTableName}.id = ${jointTableName}.${fk} WHERE ${jointTableName}.${lk} = ? ORDER BY ${jointTableName}.weight`).all(this.client.id);
   }
 
-  async find(keys, values){
-    const tableName = this.client.constructor.tableName;
-    const sql = `SELECT * FROM ${tableName} WHERE ${keys.map( k => `${k} = ?`).join(' AND ')}`;
-
-    return this.database.prepare(sql).get(...values);
+  async find(kv){
+    const v = this.translateValue(Array.from(kv.values()));
+    return this.database.prepare(`SELECT * FROM ${this.tableName} WHERE ${Array.from(kv.keys()).map( k => `${k} = ?`).join(' AND ')}`).get(...v);
   }
 
   async all(){
-    const model = this.client.constructor;
-    return this.database.prepare(`SELECT * from ${model.tableName}`)
-      .all()
-      .map(x => Object.assign(new model(null, {database: this.database}), x));
+    return this.database.prepare(`SELECT * from ${this.tableName}`).all()
   }
 
-  async filter(key, values){
-    const Model = this.client.constructor;
-    return this.database.prepare(`SELECT * FROM ${Model.tableName} WHERE id in (${values.join(', ')})`).all();
+  async filterBy(key, values){
+    const v = this.translateValue(values);
+    return this.database.prepare(`SELECT * FROM ${this.tableName} WHERE ${key} in (${v.map(() => "?").join(", ")})`).all(...v);
+  }
+
+  async filter(criteria){
+    const wheres = this.formatCriteria(criteria);
+    const sql = `SELECT * FROM ${this.tableName} WHERE ${wheres.join('')}`;
+//    console.log(sql);
+    return this.database.prepare(sql).all();
   }
 }
 

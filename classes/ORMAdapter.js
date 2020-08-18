@@ -1,4 +1,23 @@
 class ORMAdapter{
+  static OP = {
+    'EQUAL' : '=',
+    'GREATER_THAN' : '>',
+    'LESS_THAN' : '<',
+    'GREATER_THAN_EQUAL' : '>=',
+    'LESS_THAN_EQUAL' : '<=',
+    'NOT_EQUAL' : '<>',
+    'BETWEEN' : 'BETWEEN',
+    'LIKE' : 'LIKE',
+    'IN' : 'IN',
+    'AND' : 'AND',
+    'OR' : 'OR',
+    'TRUE': 'TRUE',
+    'FALSE' : 'FALSE',
+    'BLANK' : "''",
+    'START_GROUP' : '(',
+    'END_GROUP' : ')',
+  };
+
   /**
    *
    * @param {ORM} client
@@ -6,6 +25,7 @@ class ORMAdapter{
    */
   constructor(client, database) {
     this.client = client;
+    this.tableName = client.constructor.tableName;
     this.database = database;
   }
 
@@ -13,12 +33,38 @@ class ORMAdapter{
     return ( ( (Date.now() - 1563741060000) / 1000 ) | 0 ) * 100000 + ((Math.random() * 100000) & 65535);
   }
 
-  processValues(){}
-  getUpdateStatement(){}
-  getInsertStatement(){}
+  op(operator){
+    if(operator === '')return '';
+    return this.constructor.OP[operator] || ((typeof operator === 'string') ? `'${operator}'`: operator);
+  }
+
+  formatCriteria(criteria){
+    if(!Array.isArray(criteria[0]))throw new Error('criteria must group by array.');
+    return criteria.map((x, i) => `${(i===0) ? '' : this.op(x[0] || '')} ${x[1] || ''} ${this.op(x[2] || '')} ${this.op(x[3] || '')} `);
+  }
+
+  processValues(){
+    return this.translateValue(this.client.columns.map(x => this.client[x]));
+  }
+
+  translateValue(values){
+    return values;
+  }
 
   async load(){}
-  async save(sql){}
+
+  /**
+   *
+   * @param {[]} values
+   * @returns {Promise<void>}
+   */
+  async update(values){}
+  /**
+   *
+   * @param {[]} values
+   * @returns {Promise<void>}
+   */
+  async insert(values){}
 
   /**
    * add belongsToMany
@@ -44,10 +90,17 @@ class ORMAdapter{
   async delete(){}
   async hasMany(tableName, key){}
   async belongsToMany(modelTableName, jointTableName , lk, fk){}
-  async find(keys, values){}
 
   async all(){}
-  async filter(key, values){}
+  /**
+   *
+   * @param {Map} kv
+   */
+  async find(kv){}
+
+  async filterBy(key, values){}
+  async filter(criteria){}
+
 }
 
 module.exports = ORMAdapter;

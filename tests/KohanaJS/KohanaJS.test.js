@@ -1,6 +1,6 @@
 const path = require('path');
 
-describe('KOJS test', ()=>{
+describe('KohanaJS test', ()=>{
   let kohanaJS;
   const EXE_PATH = __dirname.replace(/\/tests$/, '') + '/server';
 
@@ -122,14 +122,14 @@ describe('KOJS test', ()=>{
 
       kohanaJS.configForceUpdate = false;
       kohanaJS.config.classes.cache = true;
-      kohanaJS.validateCache();
+      kohanaJS.flushCache();
 
       const Foo3 = kohanaJS.require('Foo');
       expect(Foo3.id).toBe(1);
 
       kohanaJS.config.classes.cache = false;
       kohanaJS.config.view.cache = false;
-      kohanaJS.validateCache();
+      kohanaJS.flushCache();
       //jest override require, need to use reset modules to invalidate
       jest.resetModules();
 
@@ -141,7 +141,7 @@ describe('KOJS test', ()=>{
 
       kohanaJS.config.classes.cache = true;
       kohanaJS.config.view.cache = true;
-      kohanaJS.validateCache();
+      kohanaJS.flushCache();
       //change config after validateCache. otherwise the config file will over write it.
 
       //jest override require, need to use reset modules to invalidate
@@ -169,19 +169,20 @@ describe('KOJS test', ()=>{
 
       kohanaJS.init(EXE_PATH);
       kohanaJS.configForceUpdate = true;
-      kohanaJS.configs.add('salt');
-      kohanaJS.validateCache();
+      kohanaJS.addConfigFile('salt');
+      kohanaJS.updateConfig();
       expect(kohanaJS.config.salt).toBe(undefined);
 
 
       fs.copyFileSync(APP_PATH+'/config/salt.default.js', APP_PATH+'/config/salt.js');
       jest.resetModules();
-      kohanaJS.validateCache();
+      kohanaJS.updateConfig();
       expect(kohanaJS.config.salt).toBe('default salt 1');
 
       fs.unlinkSync(APP_PATH+'/config/salt.js');
       jest.resetModules();
-      kohanaJS.validateCache();
+      kohanaJS.updateConfig();
+      kohanaJS.flushCache();
       expect(kohanaJS.config.salt).toBe(undefined);
 
     /*

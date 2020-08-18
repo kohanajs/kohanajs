@@ -53,7 +53,7 @@ class ORM extends Model{
       value : options
     });
 
-    const Adapter = options.adapter || ORM.defaultAdapter;
+    const Adapter = options.adapter || this.constructor.defaultAdapter;
     const adapter = new Adapter(this, this.database);
 
     //private property adapter
@@ -62,7 +62,8 @@ class ORM extends Model{
       value : adapter,
     });
 
-    const columns = [...this.constructor.fields.keys()];
+    //list all columns of the model.
+    const columns = Array.from(this.constructor.fields.keys());
     //add belongsTo to columns
     Array.from(this.constructor.belongsTo.keys()).forEach(x => columns.push(x));
     //private property adapter
@@ -89,19 +90,13 @@ class ORM extends Model{
    * @return ORM
    */
   async save(){
-    //SQLite not have boolean type, translate it.
-    const values = this.adapter.processValues();
-
-    let sql;
     if(this.id){
-      sql = this.adapter.getUpdateStatement();
+      await this.adapter.update(this.adapter.processValues());
     }else{
       this.id = this.options.createWithId || this.adapter.defaultID();
-      sql = this.adapter.getInsertStatement();
+      await this.adapter.insert(this.adapter.processValues());
     }
 
-    values.push(this.id);
-    await this.adapter.save(sql, values);
     return this;
   }
 
@@ -187,60 +182,89 @@ class ORM extends Model{
     return results.map(x => Object.assign(new Model(null, {database : database || this.database}), x));
   }
 
-  async all(){
-    return this.adapter.all()
+  /**
+   * find exist instance from values
+   * @param {Map} kv
+   */
+  async find(kv){
+    if(kv.size <= 0)return;
+
+    const result = await this.adapter.find(kv);
+    Object.assign(this, result);
   }
 
-  async filter(key='id', values=[]){
-    return this.adapter.filter(key, values);
+  //ORM is abstract, jointTablePrefix and tableName is null.
+  static joinTablePrefix = null;
+  static tableName = null;
+  static fields = new Map();
+  static belongsTo = new Map();
+  static hasMany = [];//hasMany cannot be Map, because children models may share same fk name.
+  static belongsToMany = [];
+
+  static defaultDatabase = null;
+  static defaultAdapter = require('./ORMAdapter/SQLite');
+  static classPrefix = 'model/';
+
+  static prepend(modelName) {
+    return ORM.classPrefix + modelName;
+  }
+
+  static create (Model, options ={}) {
+    return new Model(null, options);
   }
 
   /**
-   * find exist instance from values
-   * @param {Object} values
+   * Create and load data from database
+   * @param Model
+   * @param id
+   * @param options
+   * @returns {Promise<*>}
    */
-  async find(values){
-    const ks = Object.keys(values);
-    const vs = ks.map(k => String(values[k]));
-    if(ks.length <= 0)return;
+  static async factory (Model, id, options ={}){
+    const m = new Model(id, options);
+    await m.load();
+    return m;
+  }
 
-    const result = await this.adapter.find(ks, vs);
-    Object.assign(this, result);
+  /**
+   * load all records from the model
+   * @param Model
+   * @param options
+   * @returns {Promise<*>}
+   */
+  static async all (Model, options={}){
+    const m = new Model(null, options);
+    const records = await m.adapter.all();
+    return records.map(x => Object.assign(new Model(null, options), x));
+  }
+
+  /**
+   *
+   * @param Model
+   * @param key
+   * @param values
+   * @param options
+   * @returns []
+   */
+  static async filterBy (Model, key, values, options={}) {
+    const m = new Model(null, options);
+    return m.adapter.filterBy(key, values);
+  }
+
+  /**
+   * Given criterias [['', 'id', SQL.EQUAL, 11], [SQL.AND, 'name', SQL.EQUAL, 'peter']]
+   * @param Model
+   * @param criteria
+   * @param options
+   * @returns {Promise<*>}
+   */
+  static async filter (Model, criteria=[], options = {}){
+    if(criteria.length === 0)return [];
+
+    const m = new Model(null, options);
+    return await m.adapter.filter(criteria);
   }
 }
-
-//ORM is abstract, jointTablePrefix and tableName is null.
-ORM.jointTablePrefix = null;
-ORM.tableName = null;
-
-ORM.fields = new Map();
-ORM.belongsTo = new Map();
-ORM.hasMany = [];//hasMany cannot be Map, because children models may share same fk name.
-ORM.belongsToMany = [];
-
-ORM.defaultDatabase = null;
-ORM.defaultAdapter = require('./ORMAdapter/SQLite');
-
-ORM.create = (Model, options ={}) => {
-  return new Model(null, options);
-}
-
-ORM.factory = async (Model, id, options ={}) => {
-  const m = new Model(id, options);
-  await m.load();
-  return m;
-}
-
-ORM.getAll = async (Model, options={}) => {
-  return await ORM.create(Model, options).all();
-}
-
-ORM.filterBy = async (Model, key, values, options={}) => {
-  return await ORM.create(Model, options).filter(key, values);
-}
-
-ORM.classPrefix = 'model/';
-ORM.prepend = modelName => ORM.classPrefix + modelName;
 
 Object.freeze(ORM.prototype);
 module.exports = ORM;
