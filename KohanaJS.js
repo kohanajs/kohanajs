@@ -75,6 +75,7 @@ class KohanaJS{
 
   static addNodeModule( dirname ){
     KohanaJS.nodePackages.push(dirname);
+    return KohanaJS;
   }
 
   static flushCache(){
@@ -178,7 +179,7 @@ class KohanaJS{
 
   static #clearRequireCache(){
     KohanaJS.classPath.forEach(v =>{
-      delete require.cache[v];
+      delete require.cache[path.normalize(v)];
     })
 
     KohanaJS.classPath = new Map();
@@ -196,7 +197,7 @@ class KohanaJS{
       KohanaJS.bootstrap.modules.forEach(x => {
         const initPath = `${KohanaJS.MOD_PATH}/${x}/init.js`;
         const filePath = path.normalize(initPath);
-        if(!fs.existsSync(filePath))return;
+        if(!fs.existsSync(path.normalize(filePath)))return;
 
         //load the init file
         require(initPath);
