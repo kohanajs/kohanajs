@@ -37,6 +37,7 @@ class KohanaJS{
   static APP_PATH = KohanaJS.SYS_PATH;
   static MOD_PATH = KohanaJS.SYS_PATH;
   static SYM_PATH = KohanaJS.SYS_PATH;
+  static VIEW_PATH = KohanaJS.SYS_PATH;
 
   static config = {classes:{}, view:{}};
   static configForceUpdate = true;
@@ -46,14 +47,14 @@ class KohanaJS{
   static configPath = new Map(); //{'site.js       => 'APP_PATH/config/site.js'}
   static bootstrap = {modules: [], system: []};
 
-  static init(EXE_PATH = null, APP_PATH = null, MOD_PATH = null, SYM_PATH = null) {
+  static init(EXE_PATH = null, APP_PATH = null, MOD_PATH = null, SYM_PATH = null, VIEW_PATH= null) {
     KohanaJS.#configs   = new Set(['classes', 'view']);
     KohanaJS.classPath = new Map();
     KohanaJS.viewPath = new Map();
     KohanaJS.nodePackages = [];
 
     //set paths
-    KohanaJS.#setPath(EXE_PATH, APP_PATH, MOD_PATH, SYM_PATH);
+    KohanaJS.#setPath(EXE_PATH, APP_PATH, MOD_PATH, SYM_PATH, VIEW_PATH);
     KohanaJS.#loadBootStrap();
     KohanaJS.#updateConfig();
     KohanaJS.#reloadModuleInit();
@@ -115,7 +116,10 @@ class KohanaJS{
 
     if(!store.get(pathToFile) || forceUpdate){
       //search application, then modules, then system
-      const fetchList = [pathToFile, `${KohanaJS.APP_PATH}/${prefixPath}/${pathToFile}`];
+      const fetchList = []
+      if(prefixPath === 'views')fetchList.push(`${KohanaJS.VIEW_PATH}/${pathToFile}`);
+      fetchList.push(`${KohanaJS.APP_PATH}/${prefixPath}/${pathToFile}`);
+      fetchList.push(pathToFile);
 
       //load from app/modules
       if(KohanaJS.bootstrap?.modules){
@@ -145,11 +149,12 @@ class KohanaJS{
     return store.get(pathToFile);
   };
 
-  static #setPath(EXE_PATH, APP_PATH, MOD_PATH, SYM_PATH){
+  static #setPath(EXE_PATH, APP_PATH, MOD_PATH, SYM_PATH, VIEW_PATH){
     KohanaJS.EXE_PATH = EXE_PATH || fs.realpathSync('./');
     KohanaJS.APP_PATH = APP_PATH || KohanaJS.EXE_PATH + '/application';
     KohanaJS.MOD_PATH = MOD_PATH || KohanaJS.EXE_PATH + '/modules';
     KohanaJS.SYM_PATH = SYM_PATH || KohanaJS.EXE_PATH + '/system';
+    KohanaJS.VIEW_PATH = VIEW_PATH || KohanaJS.APP_PATH + '/views';
   };
 
   static #loadBootStrap(){

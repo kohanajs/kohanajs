@@ -101,6 +101,9 @@ class ORMAdapter{
   async filterBy(key, values){}
   async filter(criteria){}
 
+  async deleteBy(key, values){}
+  async deleteWith(criteria){}
+
 }
 
 module.exports = ORMAdapter;

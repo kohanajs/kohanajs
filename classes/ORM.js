@@ -29,6 +29,18 @@ const KohanaJS = require('../KohanaJS');
 const {Model} = require('@kohanajs/core-mvc');
 
 class ORM extends Model{
+  //ORM is abstract, jointTablePrefix and tableName is null.
+  static joinTablePrefix = null;
+  static tableName = null;
+  static fields = new Map();
+  static belongsTo = new Map();
+  static hasMany = [];//hasMany cannot be Map, because children models may share same fk name.
+  static belongsToMany = [];
+
+  static defaultDatabase = null;
+  static defaultAdapter = require('./ORMAdapter/SQLite');
+  static classPrefix = 'model/';
+
   constructor(id = null, options = {}){
     super();
     //auto generate table name
@@ -77,14 +89,19 @@ class ORM extends Model{
     this.updated_at = null;
   }
 
-  async load(){
-    if(!this.id)return this;
-    const result = await this.adapter.load();
-    if(!result)return this;
-
-    Object.assign(this, result);
-    return this;
+  /**
+   * get instance values which is not null
+   * @returns {Map<any, any>}
+   */
+  #getValues(){
+    const values = new Map();
+    this.constructor.fields.forEach((v,k)=>{
+      if(!!this[k])values.set(k, this[k]);
+    })
+    return values;
   }
+
+  //instance methods
 
   /**
    * @return ORM
@@ -99,6 +116,34 @@ class ORM extends Model{
 
     return this;
   }
+
+  /**
+   *
+   * @returns {Promise<ORM>}
+   */
+  async load(){
+    const result = await (
+      this.id ?
+        this.adapter.load() :
+        this.adapter.find(this.#getValues())
+    );
+
+    if(!result)throw new Error(`Record not found. ${this.constructor.name} id:${this.id}` + JSON.stringify(this, null, 4) );
+
+    Object.assign(this, result);
+    return this;
+  }
+
+  /**
+   *
+   * @returns {Promise<void>}
+   */
+  async delete(){
+    if(!this.id)throw new Error('ORM delete Error, no id defined');
+    await this.adapter.delete()
+  }
+
+  //relation methods
 
   /**
    * add belongsToMany
@@ -134,11 +179,6 @@ class ORM extends Model{
     await this.adapter.removeAll(jointTableName, lk);
   }
 
-  async delete(){
-    if(!this.id)throw new Error('ORM delete Error, no id defined');
-    await this.adapter.delete()
-  }
-
   /**
    * belongs to - this table have xxx_id column
    * @param {string} fk
@@ -150,9 +190,7 @@ class ORM extends Model{
   async belongsTo(fk, database=null, modelClassPath='model'){
     const modelName = this.constructor.belongsTo.get(fk);
     const modelClass = KohanaJS.require(`${modelClassPath}/${modelName}`);
-    const ins = new modelClass(this[fk], {database: database || this.database});
-    await ins.load();
-    return ins;
+    return await ORM.factory(modelClass, this[fk], {database: database || this.database});
   }
 
   /**
@@ -160,6 +198,7 @@ class ORM extends Model{
    * @param {ORM} Model
    * @param {string} fk
    * @param {*} database
+   * @return {[]}
    */
 
   async hasMany(Model, fk= "", database=null){
@@ -172,6 +211,7 @@ class ORM extends Model{
    *
    * @param {ORM} Model
    * @param {*} database
+   * @return {[]}
    */
   async belongsToMany(Model, database=null){
     const jointTableName = this.constructor.jointTablePrefix + '_' + Model.tableName;
@@ -181,29 +221,6 @@ class ORM extends Model{
     const results = await this.adapter.belongsToMany(Model.tableName, jointTableName, lk, fk);
     return results.map(x => Object.assign(new Model(null, {database : database || this.database}), x));
   }
-
-  /**
-   * find exist instance from values
-   * @param {Map} kv
-   */
-  async find(kv){
-    if(kv.size <= 0)return;
-
-    const result = await this.adapter.find(kv);
-    Object.assign(this, result);
-  }
-
-  //ORM is abstract, jointTablePrefix and tableName is null.
-  static joinTablePrefix = null;
-  static tableName = null;
-  static fields = new Map();
-  static belongsTo = new Map();
-  static hasMany = [];//hasMany cannot be Map, because children models may share same fk name.
-  static belongsToMany = [];
-
-  static defaultDatabase = null;
-  static defaultAdapter = require('./ORMAdapter/SQLite');
-  static classPrefix = 'model/';
 
   static prepend(modelName) {
     return ORM.classPrefix + modelName;
@@ -263,6 +280,33 @@ class ORM extends Model{
 
     const m = new Model(null, options);
     return await m.adapter.filter(criteria);
+  }
+
+  /**
+   *
+   * @param Model
+   * @param key
+   * @param values
+   * @param options
+   * @returns []
+   */
+  static async deleteBy (Model, key, values, options={}) {
+    const m = new Model(null, options);
+    return m.adapter.deleteBy(key, values);
+  }
+
+  /**
+   * Given criterias [['', 'id', SQL.EQUAL, 11], [SQL.AND, 'name', SQL.EQUAL, 'peter']]
+   * @param Model
+   * @param criteria
+   * @param options
+   * @returns {Promise<*>}
+   */
+  static async deleteWith (Model, criteria=[], options = {}){
+    if(criteria.length === 0)return [];
+
+    const m = new Model(null, options);
+    return await m.adapter.deleteWith(criteria);
   }
 }
 

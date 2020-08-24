@@ -72,6 +72,18 @@ class ORMAdapterSQLite extends ORMAdapter{
 //    console.log(sql);
     return this.database.prepare(sql).all();
   }
+
+  async deleteBy(key, values){
+    const v = this.translateValue(values);
+    return this.database.prepare(`DELETE FROM ${this.tableName} WHERE ${key} in (${v.map(() => "?").join(", ")})`).run(...v);
+  }
+
+  async deleteWith(criteria){
+    const wheres = this.formatCriteria(criteria);
+    const sql = `DELETE FROM ${this.tableName} WHERE ${wheres.join('')}`;
+//    console.log(sql);
+    return this.database.prepare(sql).run();
+  }
 }
 
 module.exports = ORMAdapterSQLite;
