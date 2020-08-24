@@ -16,6 +16,7 @@ class ORMAdapter{
     'BLANK' : "''",
     'START_GROUP' : '(',
     'END_GROUP' : ')',
+    'NULL' : 'NULL',
   };
 
   /**
@@ -67,6 +68,29 @@ class ORMAdapter{
   async insert(values){}
 
   /**
+   *
+   * @returns {Promise<void>}
+   */
+  async delete(){}
+
+  /**
+   *
+   * @param {string} tableName
+   * @param {string} key
+   * @returns {Promise<void>}
+   */
+  async hasMany(tableName, key){}
+
+  /**
+   *
+   * @param {string} modelTableName
+   * @param {string} jointTableName
+   * @param {string} lk
+   * @param {string} fk
+   * @returns {Promise<void>}
+   */
+  async belongsToMany(modelTableName, jointTableName , lk, fk){}
+  /**
    * add belongsToMany
    * @param {ORM[]} models
    * @param {number} weight
@@ -75,7 +99,6 @@ class ORMAdapter{
    * @param {string} fk
    */
   async add(models, weight, jointTableName, lk, fk){}
-
   /**
    * remove
    * @param {ORM} model
@@ -84,26 +107,75 @@ class ORMAdapter{
    * @param {string} fk
    */
   async remove(model, jointTableName, lk, fk){}
-
+  /**
+   *
+   * @param {string} jointTableName
+   * @param {string} lk
+   * @returns {Promise<void>}
+   */
   async removeAll(jointTableName, lk){}
 
-  async delete(){}
-  async hasMany(tableName, key){}
-  async belongsToMany(modelTableName, jointTableName , lk, fk){}
-
-  async all(){}
   /**
    *
    * @param {Map} kv
+   * @returns {Promise<void>}
    */
-  async find(kv){}
+  async loadAll(kv=null){}
+  /**
+   *
+   * @param {string} key
+   * @param {[]} values
+   * @returns {Promise<void>}
+   */
+  async loadBy(key, values){}
+  /**
+   *
+   * @param {[[string]]}criteria
+   * @returns {Promise<void>}
+   */
+  async loadWith(criteria){}
 
-  async filterBy(key, values){}
-  async filter(criteria){}
-
+  /**
+   *
+   * @param {Map} kv
+   * @returns {Promise<void>}
+   */
+  async deleteAll(kv = null){}
+  /**
+   *
+   * @param {string} key
+   * @param {[]} values
+   * @returns {Promise<void>}
+   */
   async deleteBy(key, values){}
+  /**
+   *
+   * @param {[[string]]}criteria
+   * @returns {Promise<void>}
+   */
   async deleteWith(criteria){}
 
+  /**
+   *
+   * @param {Map} kv
+   * @param {Map} columnValues
+   */
+  async updateAll(kv, columnValues){}
+  /**
+   *
+   * @param {string} key
+   * @param {[]} values
+   * @param {Map} columnValues
+   * @returns {Promise<void>}
+   */
+  async updateBy(key, values, columnValues){}
+  /**
+   *
+   * @param {[[string]]}criteria
+   * @param {Map} columnValues
+   * @returns {Promise<void>}
+   */
+  async updateWith(criteria, columnValues){}
 }
 
 module.exports = ORMAdapter;

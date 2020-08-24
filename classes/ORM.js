@@ -30,8 +30,8 @@ const {Model} = require('@kohanajs/core-mvc');
 
 class ORM extends Model{
   //ORM is abstract, jointTablePrefix and tableName is null.
-  static joinTablePrefix = null;
   static tableName = null;
+  static joinTablePrefix = null;
   static fields = new Map();
   static belongsTo = new Map();
   static hasMany = [];//hasMany cannot be Map, because children models may share same fk name.
@@ -40,6 +40,9 @@ class ORM extends Model{
   static defaultDatabase = null;
   static defaultAdapter = require('./ORMAdapter/SQLite');
   static classPrefix = 'model/';
+
+  created_at = null;
+  updated_at = null;
 
   constructor(id = null, options = {}){
     super();
@@ -85,8 +88,6 @@ class ORM extends Model{
     });
 
     this.id = id;
-    this.created_at = null;
-    this.updated_at = null;
   }
 
   /**
@@ -124,14 +125,24 @@ class ORM extends Model{
   async load(){
     const result = await (
       this.id ?
-        this.adapter.load() :
-        this.adapter.find(this.#getValues())
+        this.#loadByID() :
+        this.#loadByValues()
     );
 
-    if(!result)throw new Error(`Record not found. ${this.constructor.name} id:${this.id}` + JSON.stringify(this, null, 4) );
-
+    if(!result )throw new Error(`Record not found. ${this.constructor.name} id:${this.id}` + JSON.stringify(this, null, 4) );
     Object.assign(this, result);
     return this;
+  }
+
+  async #loadByID(){
+    return await this.adapter.load();
+  }
+
+  async #loadByValues(){
+    const values = this.#getValues();
+    if(values.size === 0)throw new Error(`${this.constructor.name}: No id and no value to load`)
+    const results = await this.adapter.loadAll(values);
+    return results[0];
   }
 
   /**
@@ -144,6 +155,60 @@ class ORM extends Model{
   }
 
   //relation methods
+  /**
+   * belongs to - this table have xxx_id column
+   * @param {string} fk
+   * @param {*} database
+   * @param {string} modelClassPath
+   * @returns {ORM}
+   */
+
+  /**
+   *
+   * @param fk
+   * @param database
+   * @param modelClassPath
+   * @returns {Promise<*>}
+   */
+  async parent(fk){
+    if(!this[fk])throw new Error(`${fk} is undefined`);
+
+    const modelName = this.constructor.belongsTo.get(fk);
+    const Model = KohanaJS.require(`${this.constructor.classPrefix}/${modelName}`);
+    return await ORM.factory(Model, this[fk], {database: this.database});
+  }
+
+  /**
+   * has many
+   * @param {ORM} Model
+   * @param {string} fk
+   * @param {*} database
+   * @return {[]}
+   */
+  async children(fk, Model= null){
+    const modelNames = this.constructor.hasMany.filter( value => (value[0] === fk));
+    if(modelNames.length > 1 && Model === null)throw new Error('children fk have multiple Models, please specific which Model will be used');
+
+    const ModelClass = Model || KohanaJS.require(`${this.constructor.classPrefix}/${modelNames[0]}`);
+
+    const results = await this.adapter.hasMany(ModelClass.tableName, fk);
+    return results.map(x => Object.assign(new ModelClass(null, {database : this.database}), x));
+  }
+
+  /**
+   *
+   * @param {ORM} Model
+   * @param {*} database
+   * @return {[]}
+   */
+  async siblings(Model){
+    const jointTableName = this.constructor.jointTablePrefix + '_' + Model.tableName;
+    const lk = this.constructor.jointTablePrefix + '_id';
+    const fk = Model.jointTablePrefix + '_id';
+
+    const results = await this.adapter.belongsToMany(Model.tableName, jointTableName, lk, fk);
+    return results.map(x => Object.assign(ORM.create(Model, {database : this.database}), x));
+  }
 
   /**
    * add belongsToMany
@@ -151,7 +216,6 @@ class ORM extends Model{
    * @param {number} weight
    * @returns void
    */
-
   async add(model, weight = 0){
     const jointTableName = `${this.constructor.jointTablePrefix}_${model.constructor.tableName}`;
     const lk = this.constructor.jointTablePrefix + '_id';
@@ -164,7 +228,6 @@ class ORM extends Model{
    * remove
    * @param {ORM} model
    */
-
   async remove(model){
     const jointTableName = `${this.constructor.jointTablePrefix}_${model.constructor.tableName}`;
     const lk = this.constructor.jointTablePrefix + '_id';
@@ -173,59 +236,23 @@ class ORM extends Model{
     await this.adapter.remove(model, jointTableName, lk, fk);
   }
 
+  /**
+   *
+   * @param Model
+   * @returns {Promise<void>}
+   */
   async removeAll(Model){
     const jointTableName = `${this.constructor.jointTablePrefix}_${Model.tableName}`;
     const lk = this.constructor.jointTablePrefix + '_id';
     await this.adapter.removeAll(jointTableName, lk);
   }
 
-  /**
-   * belongs to - this table have xxx_id column
-   * @param {string} fk
-   * @param {*} database
-   * @param {string} modelClassPath
-   * @returns {ORM}
-   */
-
-  async belongsTo(fk, database=null, modelClassPath='model'){
-    const modelName = this.constructor.belongsTo.get(fk);
-    const modelClass = KohanaJS.require(`${modelClassPath}/${modelName}`);
-    return await ORM.factory(modelClass, this[fk], {database: database || this.database});
-  }
 
   /**
-   * has many
-   * @param {ORM} Model
-   * @param {string} fk
-   * @param {*} database
-   * @return {[]}
+   * @param Model
+   * @param options
+   * @returns {*}
    */
-
-  async hasMany(Model, fk= "", database=null){
-    const key = (fk === "") ? this.constructor.name.toLowerCase() + '_id' : fk;
-    const results = await this.adapter.hasMany(Model.tableName, key);
-    return results.map(x => Object.assign(new Model(null, {database : database || this.database}), x));
-  }
-
-  /**
-   *
-   * @param {ORM} Model
-   * @param {*} database
-   * @return {[]}
-   */
-  async belongsToMany(Model, database=null){
-    const jointTableName = this.constructor.jointTablePrefix + '_' + Model.tableName;
-    const lk = this.constructor.jointTablePrefix + '_id';
-    const fk = Model.jointTablePrefix + '_id';
-
-    const results = await this.adapter.belongsToMany(Model.tableName, jointTableName, lk, fk);
-    return results.map(x => Object.assign(new Model(null, {database : database || this.database}), x));
-  }
-
-  static prepend(modelName) {
-    return ORM.classPrefix + modelName;
-  }
-
   static create (Model, options ={}) {
     return new Model(null, options);
   }
@@ -243,15 +270,17 @@ class ORM extends Model{
     return m;
   }
 
+  //Collection methods
   /**
    * load all records from the model
-   * @param Model
+   * @param {Function} Model
+   * @param {Map} kv
    * @param options
    * @returns {Promise<*>}
    */
-  static async all (Model, options={}){
-    const m = new Model(null, options);
-    const records = await m.adapter.all();
+  static async loadAll (Model, kv = null,options={}){
+    const m = ORM.create(Model, options);
+    const records = await m.adapter.loadAll(kv);
     return records.map(x => Object.assign(new Model(null, options), x));
   }
 
@@ -263,9 +292,9 @@ class ORM extends Model{
    * @param options
    * @returns []
    */
-  static async filterBy (Model, key, values, options={}) {
-    const m = new Model(null, options);
-    return m.adapter.filterBy(key, values);
+  static async loadBy (Model, key, values, options={}) {
+    const m = ORM.create(Model, options);
+    return m.adapter.loadBy(key, values);
   }
 
   /**
@@ -275,23 +304,28 @@ class ORM extends Model{
    * @param options
    * @returns {Promise<*>}
    */
-  static async filter (Model, criteria=[], options = {}){
+  static async loadWith (Model, criteria=[], options = {}){
     if(criteria.length === 0)return [];
 
-    const m = new Model(null, options);
-    return await m.adapter.filter(criteria);
+    const m = ORM.create(Model, options);
+    return await m.adapter.loadWith(criteria);
+  }
+
+  static async deleteAll(Model, kv=null, options={}){
+    const m = ORM.create(Model, options);
+    await m.adapter.deleteAll(kv);
   }
 
   /**
    *
-   * @param Model
-   * @param key
-   * @param values
+   * @param {Function} Model
+   * @param {string} key
+   * @param {[]} values
    * @param options
    * @returns []
    */
   static async deleteBy (Model, key, values, options={}) {
-    const m = new Model(null, options);
+    const m = ORM.create(Model, options);
     return m.adapter.deleteBy(key, values);
   }
 
@@ -305,8 +339,48 @@ class ORM extends Model{
   static async deleteWith (Model, criteria=[], options = {}){
     if(criteria.length === 0)return [];
 
-    const m = new Model(null, options);
+    const m = ORM.create(Model, options);
     return await m.adapter.deleteWith(criteria);
+  }
+
+  /**
+   * @param {Function} Model
+   * @param options
+   * @param {Map} kv
+   * @param {Map} columnValues
+   */
+  static async updateAll(Model, kv, columnValues, options={}){
+    const m = ORM.create(Model, options);
+    await m.adapter.updateAll(kv, columnValues);
+  }
+
+  /**
+   *
+   * @param {Function} Model
+   * @param options
+   * @param {string} key
+   * @param {[]} values
+   * @param {Map} columnValues
+   * @returns []
+   */
+  static async updateBy (Model, key, values, columnValues, options={}) {
+    const m = ORM.create(Model, options);
+    return m.adapter.updateBy(key, values, columnValues);
+  }
+
+  /**
+   * Given criterias [['', 'id', SQL.EQUAL, 11], [SQL.AND, 'name', SQL.EQUAL, 'peter']]
+   * @param {Function} Model
+   * @param options
+   * @param {[[string]]}criteria
+   * @param {Map} columnValues
+   * @returns {Promise<*>}
+   */
+  static async updateWith (Model, criteria, columnValues, options = {}){
+    if(criteria.length === 0)return [];
+
+    const m = ORM.create(Model, options);
+    return await m.adapter.updateWith(criteria, columnValues);
   }
 }
 

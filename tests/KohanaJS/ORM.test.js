@@ -141,7 +141,7 @@ describe('orm test', ()=>{
         const home = await new Address(1).load();
         expect(home.address1).toBe('Planet X');
 
-        const owner = await home.belongsTo('person_id');
+        const owner = await home.parent('person_id');
         expect(owner.first_name).toBe('Peter');
 
         const office = new Address();
@@ -151,11 +151,16 @@ describe('orm test', ()=>{
 
         expect(office.address1).toBe('Planet Y');
 
-        const addresses = await peter.hasMany(Address);
+        const addresses = await peter.children('person_id', Address);
         expect(addresses.length).toBe(2);
 
-        const addresses2 = await peter.hasMany(Address, 'person_id');
-        expect(addresses2.length).toBe(2);
+        try{
+          const addresses2 = await peter.children('person_id');
+          expect('should not run this line').toBe(false);
+        }catch (e){
+          expect(e.message).toBe('children fk have multiple Models, please specific which Model will be used');
+        }
+
     });
 
     test('instance belongsTo', async () =>{
@@ -175,7 +180,7 @@ describe('orm test', ()=>{
         const home = await ORM.factory(Address, 1, {database: db});
         expect(home.address1).toBe('Planet X');
 
-        const owner = await home.belongsTo('person_id');
+        const owner = await home.parent('person_id');
         expect(owner.first_name).toBe('Peter');
 
         expect(owner.db).toStrictEqual(home.db);
@@ -202,7 +207,7 @@ describe('orm test', ()=>{
         const product = await ORM.factory(Product, 1);
 
         expect(product.name).toBe('bar');
-        const tags = await product.belongsToMany(Tag);
+        const tags = await product.siblings(Tag);
 
         expect(tags[0].name).toBe('foo');
         expect(tags[1].name).toBe('tar');
@@ -226,7 +231,7 @@ describe('orm test', ()=>{
         const product = await ORM.factory(Product, 1, {database: db});
 
         expect(product.name).toBe('bar');
-        const tags = await product.belongsToMany(Tag);
+        const tags = await product.siblings(Tag);
 
         expect(tags[0].name).toBe('foo');
         expect(tags[1].name).toBe('tar');
@@ -248,12 +253,12 @@ describe('orm test', ()=>{
         ORM.database = db;
 
         const Tag = KohanaJS.require('model/Tag');
-        const tags = await ORM.all(Tag, {database: db});
+        const tags = await ORM.loadAll(Tag, null, {database: db});
 
         expect(tags[0].name).toBe('foo');
         expect(tags[1].name).toBe('tar');
 
-        const tags2 = await ORM.all(Tag);
+        const tags2 = await ORM.loadAll(Tag, null);
         expect(tags2[0].name).toBe('foo');
         expect(tags2[1].name).toBe('tar');
     });
@@ -481,7 +486,13 @@ describe('orm test', ()=>{
     const Product = KohanaJS.require('model/Product');
 
     const product = new Product(null, {database : db});
-    await product.load();
+    try{
+      await product.load();
+      expect('this line should not be loaded').toBe(false);
+    }catch (e){
+      expect(e.message).toBe('Product: No id and no value to load');
+    }
+
     expect(product.name).toBe(null);
 
     product.id = 1;
@@ -525,7 +536,7 @@ describe('orm test', ()=>{
     const home = await ORM.factory(Address, 1, {database:db});
     expect(home.address1).toBe('Planet X');
 
-    const owner = await home.belongsTo('person_id');
+    const owner = await home.parent('person_id');
     expect(owner.first_name).toBe('Peter');
 
 
@@ -538,7 +549,7 @@ describe('orm test', ()=>{
 
     Address.tableName = null;
     try{
-      const addresses = await peter.hasMany(Address);
+      const addresses = await peter.children('product_id', Address);
     }catch(e){
       expect(e.message).toBe('near "null": syntax error');
     }
@@ -571,8 +582,19 @@ describe('orm test', ()=>{
 
     const Person = KohanaJS.require('model/Person');
     const a = new Person('1000', {database: db});
-    const loaded = await a.load();
-    expect(loaded.created_at).toBe(null);
+
+    try{
+      await a.load();
+      expect('this line should not be loaded').toBe(false);
+    }catch (e){
+      expect(e.message).toBe(`Record not found. Person id:1000{
+    "created_at": null,
+    "updated_at": null,
+    "id": "1000"
+}`)
+    }
+
+    expect(a.created_at).toBe(null);
   })
 
   test('ORM convert boolean to TRUE and FALSE when save', async() => {
@@ -653,11 +675,18 @@ END;
     await p2.save();
 
     const r = ORM.create(Person, {database: db});
-    await r.find(new Map([["name", "Alice"]]));
+    r.name = 'Alice';
+    await r.load();
     expect(r.id).toBe(p.id);
 
     const r2 = ORM.create(Person, {database: db});
-    await r2.find(new Map());
+    try{
+      await r2.load();
+      expect('this line shoulld not be loaded').toBe(false);
+    }catch (e){
+      expect(e.message).toBe('Person: No id and no value to load');
+    }
+
     expect(r2.id).toBe(null);
   })
 
@@ -672,17 +701,29 @@ END;
     await a.load();
     await a.update([]);
     await a.insert([]);
-    await a.add(p, 0, 'test', 'lk', 'fk');
-    await a.remove(p, 'test', 'lk', 'fk');
-    await a.removeAll();
     await a.delete();
+
     await a.hasMany('test', 'key');
     await a.belongsToMany('test', 'test', 'lk', 'fk');
-    await a.all();
-    await a.find(new Map());
-    await a.filter([[]])
-    await a.filter();
-    await a.filterBy('', []);
+    await a.add(p, 0, 'test', 'lk', 'fk');
+    await a.remove(p, 'test', 'lk', 'fk');
+    await a.removeAll('test', 'lk');
+
+    await a.loadAll();
+    await a.loadAll(new Map());
+    await a.loadBy('id', [1,2,3,4])
+    await a.loadWith([['', 'id', 'EQUAL', 1], ['AND', 'name', 'EQUAL', 'test']]);
+
+    await a.deleteAll();
+    await a.deleteAll(new Map());
+    await a.deleteBy('id', [1,2,3,4])
+    await a.deleteWith([['', 'id', 'EQUAL', 1], ['AND', 'name', 'EQUAL', 'test']]);
+
+    await a.updateAll();
+    await a.updateAll(new Map());
+    await a.updateBy('id', [1,2,3,4])
+    await a.updateWith([['', 'id', 'EQUAL', 1], ['AND', 'name', 'EQUAL', 'test']]);
+
     a.defaultID();
     a.op('');
     a.formatCriteria([[]]);
@@ -693,13 +734,13 @@ END;
 
   test('prepend model prefix path', async ()=>{
     KohanaJS.init(__dirname+'/test15');
-    const Person = KohanaJS.require(ORM.prepend('Person'));
+    const Person = KohanaJS.require(ORM.classPrefix + 'Person');
     const p = new Person();
     expect(!!p).toBe(true);
 
     try{
       ORM.classPrefix = 'models/';
-      const P2 = KohanaJS.require(ORM.prepend('Person'));
+      const P2 = KohanaJS.require(ORM.classPrefix + 'Person');
       expect('this line should not be run').expect(true);
     }catch (e){
       ORM.classPrefix = 'model/';
@@ -766,13 +807,14 @@ END;
     await p5.save();
 
     const px = ORM.create(Person);
-    await px.find(new Map([['name', 'Eric']]));
+    px.name = 'Eric';
+    await px.load();
     expect(px.email).toBe('eric@example.com');
 
-    const people = await ORM.filterBy(Person, 'name', ["Alice", "Bob", "Eric", "Frank"], {database: db});
+    const people = await ORM.loadBy(Person, 'name', ["Alice", "Bob", "Eric", "Frank"], {database: db});
     expect(people.length).toBe(3);
 
-    const falsy = await ORM.filterBy(Person, 'enable', [false]);
+    const falsy = await ORM.loadBy(Person, 'enable', [false]);
     expect(falsy.length).toBe(2);
   })
 
@@ -812,7 +854,7 @@ INSERT INTO persons (id, enable, name, email) VALUES (6, 0, 'Frank', 'frank@exam
     //const res = db.prepare("SELECT * FROM persons WHERE enable = 1 AND (name = 'Alice' OR name = 'Bob' OR name = 'Charlie' OR name = 'Eric')").all();
     const Person = KohanaJS.require('model/Person');
 
-    const people = await ORM.filter(Person, [
+    const people = await ORM.loadWith(Person, [
       ['', 'enable', EQUAL, TRUE],
       [AND],
       [START_GROUP],
@@ -824,24 +866,24 @@ INSERT INTO persons (id, enable, name, email) VALUES (6, 0, 'Frank', 'frank@exam
     ], {database: db});
     expect(people.length).toBe(3);
 
-    const empty = await ORM.filter(Person, [], {adapter: require('../../classes/ORMAdapter/SQLite')});
+    const empty = await ORM.loadWith(Person, [], {adapter: require('../../classes/ORMAdapter/SQLite')});
     expect(empty.length).toBe(0);
 
     Person.defaultAdapter = require('../../classes/ORMAdapter/SQLite');
-    const empty2 = await ORM.filter(Person);
+    const empty2 = await ORM.loadWith(Person);
     expect(empty2.length).toBe(0);
 
-    const dennis = await ORM.filter(Person, [['', 'id', EQUAL, 4]]);
+    const dennis = await ORM.loadWith(Person, [['', 'id', EQUAL, 4]]);
     expect(dennis[0].email).toBe('dennis@example.com');
 
     try{
-      await ORM.filter(Person, ['', 'id', EQUAL, 4]);
+      await ORM.loadWith(Person, ['', 'id', EQUAL, 4]);
       expect('this line should not be run').toBe(false);
     }catch(e){
       expect(e.message).toBe('criteria must group by array.');
     }
 
-    const res = await ORM.filter(Person);
+    const res = await ORM.loadWith(Person);
     expect(res.length).toBe(0);
   })
 });
