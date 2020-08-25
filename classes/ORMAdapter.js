@@ -36,12 +36,21 @@ class ORMAdapter{
 
   op(operator){
     if(operator === '')return '';
-    return this.constructor.OP[operator] || ((typeof operator === 'string') ? `'${operator}'`: operator);
+    const OP = this.constructor.OP[operator];
+    if(OP === undefined){
+      return (typeof operator === 'string') ? `'${operator}'`: operator;
+    }
+
+    return OP;
   }
 
   formatCriteria(criteria){
     if(!Array.isArray(criteria[0]))throw new Error('criteria must group by array.');
-    return criteria.map((x, i) => `${(i===0) ? '' : this.op(x[0] || '')} ${x[1] || ''} ${this.op(x[2] || '')} ${this.op(x[3] || '')} `);
+    return criteria.map(
+      (x, i) => {
+        return `${(i===0) ? '' : this.op(x[0] || '')} ${x[1] || ''} ${this.op(x[2] || '')} ${this.op(x[3] || '')} `
+      }
+    );
   }
 
   processValues(){
@@ -52,7 +61,7 @@ class ORMAdapter{
     return values;
   }
 
-  async load(){}
+  async read(){}
 
   /**
    *
@@ -120,20 +129,20 @@ class ORMAdapter{
    * @param {Map} kv
    * @returns {Promise<void>}
    */
-  async loadAll(kv=null){}
+  async readAll(kv=null){}
   /**
    *
    * @param {string} key
    * @param {[]} values
    * @returns {Promise<void>}
    */
-  async loadBy(key, values){}
+  async readBy(key, values){}
   /**
    *
    * @param {[[string]]}criteria
    * @returns {Promise<void>}
    */
-  async loadWith(criteria){}
+  async readWith(criteria){}
 
   /**
    *

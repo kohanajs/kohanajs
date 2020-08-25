@@ -30,6 +30,8 @@ const {Model} = require('@kohanajs/core-mvc');
 
 class ORM extends Model{
   //ORM is abstract, jointTablePrefix and tableName is null.
+  static database = null;
+
   static tableName = null;
   static joinTablePrefix = null;
   static fields = new Map();
@@ -107,7 +109,7 @@ class ORM extends Model{
   /**
    * @return ORM
    */
-  async save(){
+  async write(){
     if(this.id){
       await this.adapter.update(this.adapter.processValues());
     }else{
@@ -122,11 +124,11 @@ class ORM extends Model{
    *
    * @returns {Promise<ORM>}
    */
-  async load(){
+  async read(){
     const result = await (
       this.id ?
-        this.#loadByID() :
-        this.#loadByValues()
+        this.#readByID() :
+        this.#readByValues()
     );
 
     if(!result )throw new Error(`Record not found. ${this.constructor.name} id:${this.id}` + JSON.stringify(this, null, 4) );
@@ -134,14 +136,14 @@ class ORM extends Model{
     return this;
   }
 
-  async #loadByID(){
-    return await this.adapter.load();
+  async #readByID(){
+    return await this.adapter.read();
   }
 
-  async #loadByValues(){
+  async #readByValues(){
     const values = this.#getValues();
-    if(values.size === 0)throw new Error(`${this.constructor.name}: No id and no value to load`)
-    const results = await this.adapter.loadAll(values);
+    if(values.size === 0)throw new Error(`${this.constructor.name}: No id and no value to read`)
+    const results = await this.adapter.readAll(values);
     return results[0];
   }
 
@@ -258,7 +260,7 @@ class ORM extends Model{
   }
 
   /**
-   * Create and load data from database
+   * Create and read data from database
    * @param Model
    * @param id
    * @param options
@@ -266,21 +268,21 @@ class ORM extends Model{
    */
   static async factory (Model, id, options ={}){
     const m = new Model(id, options);
-    await m.load();
+    await m.read();
     return m;
   }
 
   //Collection methods
   /**
-   * load all records from the model
+   * read all records from the model
    * @param {Function} Model
    * @param {Map} kv
    * @param options
    * @returns {Promise<*>}
    */
-  static async loadAll (Model, kv = null,options={}){
-    const m = ORM.create(Model, options);
-    const records = await m.adapter.loadAll(kv);
+  static async readAll (Model, kv = null,options={}){
+    const m = ORM.create(Model, Object.assign({database: this.database}, options));
+    const records = await m.adapter.readAll(kv);
     return records.map(x => Object.assign(new Model(null, options), x));
   }
 
@@ -292,9 +294,9 @@ class ORM extends Model{
    * @param options
    * @returns []
    */
-  static async loadBy (Model, key, values, options={}) {
-    const m = ORM.create(Model, options);
-    return m.adapter.loadBy(key, values);
+  static async readBy (Model, key, values, options={}) {
+    const m = ORM.create(Model, Object.assign({database: this.database}, options));
+    return m.adapter.readBy(key, values);
   }
 
   /**
@@ -304,15 +306,15 @@ class ORM extends Model{
    * @param options
    * @returns {Promise<*>}
    */
-  static async loadWith (Model, criteria=[], options = {}){
+  static async readWith (Model, criteria=[], options = {}){
     if(criteria.length === 0)return [];
 
-    const m = ORM.create(Model, options);
-    return await m.adapter.loadWith(criteria);
+    const m = ORM.create(Model, Object.assign({database: this.database}, options));
+    return await m.adapter.readWith(criteria);
   }
 
   static async deleteAll(Model, kv=null, options={}){
-    const m = ORM.create(Model, options);
+    const m = ORM.create(Model, Object.assign({database: this.database}, options));
     await m.adapter.deleteAll(kv);
   }
 
@@ -325,7 +327,7 @@ class ORM extends Model{
    * @returns []
    */
   static async deleteBy (Model, key, values, options={}) {
-    const m = ORM.create(Model, options);
+    const m = ORM.create(Model, Object.assign({database: this.database}, options));
     return m.adapter.deleteBy(key, values);
   }
 
@@ -339,7 +341,7 @@ class ORM extends Model{
   static async deleteWith (Model, criteria=[], options = {}){
     if(criteria.length === 0)return [];
 
-    const m = ORM.create(Model, options);
+    const m = ORM.create(Model, Object.assign({database: this.database}, options));
     return await m.adapter.deleteWith(criteria);
   }
 
@@ -350,7 +352,7 @@ class ORM extends Model{
    * @param {Map} columnValues
    */
   static async updateAll(Model, kv, columnValues, options={}){
-    const m = ORM.create(Model, options);
+    const m = ORM.create(Model, Object.assign({database: this.database}, options));
     await m.adapter.updateAll(kv, columnValues);
   }
 
@@ -364,7 +366,7 @@ class ORM extends Model{
    * @returns []
    */
   static async updateBy (Model, key, values, columnValues, options={}) {
-    const m = ORM.create(Model, options);
+    const m = ORM.create(Model, Object.assign({database: this.database}, options));
     return m.adapter.updateBy(key, values, columnValues);
   }
 
@@ -379,7 +381,7 @@ class ORM extends Model{
   static async updateWith (Model, criteria, columnValues, options = {}){
     if(criteria.length === 0)return [];
 
-    const m = ORM.create(Model, options);
+    const m = ORM.create(Model, Object.assign({database: this.database}, options));
     return await m.adapter.updateWith(criteria, columnValues);
   }
 }

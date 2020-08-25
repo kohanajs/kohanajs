@@ -15,7 +15,7 @@ class ORMAdapterSQLite extends ORMAdapter{
     })
   }
 
-  async load(){
+  async read(){
      return this.database.prepare(`SELECT * from ${this.tableName} WHERE id = ?`).get(this.client.id);
   }
 
@@ -53,18 +53,18 @@ class ORMAdapterSQLite extends ORMAdapter{
     this.database.prepare(`DELETE FROM ${jointTablename} WHERE ${lk} = ?`).run(this.client.id);
   }
 
-  async loadAll(kv=null){
+  async readAll(kv=null){
     if(!kv)return this.database.prepare(`SELECT * from ${this.tableName}`).all();
     const v = this.translateValue(Array.from(kv.values()));
     return this.database.prepare(`SELECT * FROM ${this.tableName} WHERE ${Array.from(kv.keys()).map( k => `${k} = ?`).join(' AND ')}`).all(...v);
   }
 
-  async loadBy(key, values){
+  async readBy(key, values){
     const v = this.translateValue(values);
     return this.database.prepare(`SELECT * FROM ${this.tableName} WHERE ${key} IN (${v.map(() => "?").join(", ")})`).all(...v);
   }
 
-  async loadWith(criteria){
+  async readWith(criteria){
     const wheres = this.formatCriteria(criteria);
     const sql = `SELECT * FROM ${this.tableName} WHERE ${wheres.join('')}`;
 //    console.log(sql);
@@ -91,22 +91,23 @@ class ORMAdapterSQLite extends ORMAdapter{
 
   async updateAll(kv, columnValues){
     const keys = Array.from(columnValues.keys());
-    const values = Array.from(columnValues.values());
-    if(!kv)return this.database.prepare(`UPDATE ${this.tableName} SET ${keys.map(key => `${key} = ?`)}`).run(...values);
+    const newValues = this.translateValue(Array.from(columnValues.values()));
+    if(!kv)return this.database.prepare(`UPDATE ${this.tableName} SET ${keys.map(key => `${key} = ?`)}`).run(...newValues);
     const v = this.translateValue(Array.from(kv.values()));
-    return this.database.prepare(`UPDATE ${this.tableName} SET ${keys.map(key => `${key} = ?`)} WHERE ${Array.from(kv.keys()).map( k => `${k} = ?`).join(' AND ')}`).run(...values, ...v);
+    return this.database.prepare(`UPDATE ${this.tableName} SET ${keys.map(key => `${key} = ?`)} WHERE ${Array.from(kv.keys()).map( k => `${k} = ?`).join(' AND ')}`).run(...newValues, ...v);
   }
 
   async updateBy(key, values, columnValues){
     const keys = Array.from(columnValues.keys());
-    const newValues = Array.from(columnValues.values());
+    const newValues = this.translateValue(Array.from(columnValues.values()));
     const v = this.translateValue(values);
     return this.database.prepare(`UPDATE ${this.tableName} SET ${keys.map(key => `${key} = ?`)} WHERE ${key} IN (${v.map(() => "?").join(", ")})`).run(...newValues, ...v);
   }
 
   async updateWith(criteria, columnValues){
     const keys = Array.from(columnValues.keys());
-    const newValues = Array.from(columnValues.values());
+    const newValues = this.translateValue(Array.from(columnValues.values()));
+
     const wheres = this.formatCriteria(criteria);
     const sql = `UPDATE ${this.tableName} SET ${keys.map(key => `${key} = ?`)} WHERE ${wheres.join('')}`;
     return this.database.prepare(sql).run(...newValues);

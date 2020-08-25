@@ -1,4 +1,4 @@
-const {AND, EQUAL, OR, TRUE, FALSE, START_GROUP, END_GROUP} = require('@kohanajs/constants').SQL;
+const {AND, EQUAL, NOT_EQUAL, OR, TRUE, FALSE, START_GROUP, END_GROUP} = require('@kohanajs/constants').SQL;
 const ORM = require('../../classes/ORM');
 const Database = require('better-sqlite3');
 const path = require('path');
@@ -65,8 +65,8 @@ describe('orm test', ()=>{
         db.prepare(`INSERT INTO ${tableName} (text) VALUES (?)`).run('Foo');
 
         const TestModel = require('./orm/application/classes/TestModel');
-        const m = await new TestModel( 1).load();
-        const m2 = await new TestModel(2).load();
+        const m = await new TestModel( 1).read();
+        const m2 = await new TestModel(2).read();
 
         expect(TestModel.tableName).toBe('testmodels');
 
@@ -88,7 +88,7 @@ describe('orm test', ()=>{
 
       const TestModel = require('./orm/application/classes/TestModel');
 
-      const m = await new TestModel(1, {database: db}).load();
+      const m = await new TestModel(1, {database: db}).read();
       const m2 = await ORM.factory(TestModel, 2, {database: db});
 
       expect(TestModel.tableName).toBe('testmodels');
@@ -135,10 +135,10 @@ describe('orm test', ()=>{
         const Address = KohanaJS.require('model/Address');
         const Person = KohanaJS.require('model/Person');
 
-        const peter = await new Person(1).load();
+        const peter = await new Person(1).read();
         expect(peter.first_name).toBe('Peter');
 
-        const home = await new Address(1).load();
+        const home = await new Address(1).read();
         expect(home.address1).toBe('Planet X');
 
         const owner = await home.parent('person_id');
@@ -147,7 +147,7 @@ describe('orm test', ()=>{
         const office = new Address();
         office.address1 = 'Planet Y';
         office.person_id = peter.id;
-        await office.save();
+        await office.write();
 
         expect(office.address1).toBe('Planet Y');
 
@@ -253,12 +253,12 @@ describe('orm test', ()=>{
         ORM.database = db;
 
         const Tag = KohanaJS.require('model/Tag');
-        const tags = await ORM.loadAll(Tag, null, {database: db});
+        const tags = await ORM.readAll(Tag, null, {database: db});
 
         expect(tags[0].name).toBe('foo');
         expect(tags[1].name).toBe('tar');
 
-        const tags2 = await ORM.loadAll(Tag, null);
+        const tags2 = await ORM.readAll(Tag, null);
         expect(tags2[0].name).toBe('foo');
         expect(tags2[1].name).toBe('tar');
     });
@@ -278,7 +278,7 @@ describe('orm test', ()=>{
       expect(t.name).toBe('foo');
     });
 
-    test('save', async ()=>{
+    test('write', async ()=>{
       const dbPath = path.normalize(__dirname+'/orm/db/belongsTo11.sqlite');
       if(fs.existsSync(dbPath))fs.unlinkSync(dbPath);
       fs.copyFileSync(__dirname+'/orm/db/belongsTo.default.sqlite', dbPath);
@@ -290,7 +290,7 @@ describe('orm test', ()=>{
 
       const peter = await ORM.factory(Person, 1, {database: db} );
       peter.last_name = 'Panther';
-      peter.save();
+      peter.write();
 
       const data = db.prepare('SELECT last_name FROM persons WHERE id = 1').get();
       expect(data.last_name).toBe('Panther');
@@ -308,7 +308,7 @@ describe('orm test', ()=>{
       const alice = ORM.create(Person, {database: db});
       alice.first_name = 'Alice';
       alice.last_name = 'Lee';
-      await alice.save();
+      await alice.write();
 
       const data = db.prepare('SELECT * FROM persons WHERE first_name = ?').get('Alice');
       expect(data.last_name).toBe('Lee');
@@ -317,7 +317,7 @@ describe('orm test', ()=>{
       const bob = ORM.create(Person);
       bob.first_name = 'Bob';
       bob.last_name = 'Chan';
-      await bob.save();
+      await bob.write();
 
       const data2 = db.prepare('SELECT * FROM persons WHERE first_name = ?').get('Bob');
       expect(data2.last_name).toBe('Chan');
@@ -335,23 +335,23 @@ describe('orm test', ()=>{
 
       const tagA = new Tag(null, {database: db});
       tagA.name = 'white';
-      tagA.save();
+      tagA.write();
 
       const tagB = new Tag(null, {database: db});
       tagB.name = 'liquid';
-      tagB.save();
+      tagB.write();
 
       const product = new Product(null, {database : db});
       product.name = 'milk';
-      product.save();
+      product.write();
       product.add(tagA);
-      product.save();
+      product.write();
 
       const result1 = db.prepare('SELECT * from product_tags WHERE product_id = ?').all(product.id);
       expect(result1.length).toBe(1);
 
       product.add(tagB);
-      product.save();
+      product.write();
       const result2 = db.prepare('SELECT * from product_tags WHERE product_id = ?').all(product.id);
       expect(result2.length).toBe(2);
     })
@@ -367,19 +367,19 @@ describe('orm test', ()=>{
 
     const tagA = new Tag(null, {database: db});
     tagA.name = 'white';
-    await tagA.save();
+    await tagA.write();
 
     const product = new Product(null, {database : db});
     product.name = 'milk';
-    await product.save();
+    await product.write();
     await product.add(tagA);
-    await product.save();
+    await product.write();
 
     const result1 = db.prepare('SELECT * from product_tags WHERE product_id = ?').all(product.id);
     expect(result1.length).toBe(1);
 
     await product.add(tagA);
-    await product.save();
+    await product.write();
     const result2 = db.prepare('SELECT * from product_tags WHERE product_id = ?').all(product.id);
     expect(result2.length).toBe(1);
   });
@@ -395,19 +395,19 @@ describe('orm test', ()=>{
 
     const tagA = new Tag(null, {database: db});
     tagA.name = 'white';
-    tagA.save();
+    tagA.write();
 
     const product = new Product(null, {database : db});
     product.name = 'milk';
-    await product.save();
+    await product.write();
     await product.add(tagA);
-    await product.save();
+    await product.write();
 
     const result1 = db.prepare('SELECT * from product_tags WHERE product_id = ?').all(product.id);
     expect(result1.length).toBe(1);
 
     await product.remove(tagA);
-    await product.save();
+    await product.write();
     const result2 = db.prepare('SELECT * from product_tags WHERE product_id = ?').all(product.id);
     expect(result2.length).toBe(0);
   });
@@ -421,7 +421,7 @@ describe('orm test', ()=>{
     const Product = KohanaJS.require('model/Product');
     const product = new Product(null, {database : db});
     product.name = 'milk';
-    product.save();
+    product.write();
 
     const result1 = db.prepare('SELECT * from products').all();
     expect(result1.length).toBe(1);
@@ -442,18 +442,18 @@ describe('orm test', ()=>{
 
     const tagA = new Tag(null, {database: db});
     tagA.name = 'white';
-    await tagA.save();
+    await tagA.write();
 
     const tagB = new Tag(null, {database: db});
     tagB.name = 'liquid';
-    await tagB.save();
+    await tagB.write();
 
     const product = new Product(null, {database : db});
     product.name = 'milk';
-    await product.save();
+    await product.write();
     await product.add(tagA);
     await product.add(tagB);
-    await product.save();
+    await product.write();
 
     const result1 = db.prepare('SELECT * from product_tags WHERE product_id = ?').all(product.id);
     expect(result1.length).toBe(2);
@@ -464,7 +464,7 @@ describe('orm test', ()=>{
 
     const product2 = ORM.create(Product, {database: db});
     product2.name = 'coffee';
-    await product2.save();
+    await product2.write();
     await product2.add(tagA);
     await product2.add(tagB);
     await product2.add(tagB);
@@ -476,7 +476,7 @@ describe('orm test', ()=>{
     expect(result4.length).toBe(0);
   });
 
-  test('lazy load', async ()=>{
+  test('lazy loading', async ()=>{
     const dbPath = path.normalize(__dirname+'/orm/db/belongsToMany18.sqlite');
     if(fs.existsSync(dbPath))fs.unlinkSync(dbPath);
     fs.copyFileSync(__dirname+'/orm/db/belongsToMany.default.sqlite', dbPath);
@@ -487,16 +487,16 @@ describe('orm test', ()=>{
 
     const product = new Product(null, {database : db});
     try{
-      await product.load();
+      await product.read();
       expect('this line should not be loaded').toBe(false);
     }catch (e){
-      expect(e.message).toBe('Product: No id and no value to load');
+      expect(e.message).toBe('Product: No id and no value to read');
     }
 
     expect(product.name).toBe(null);
 
     product.id = 1;
-    await product.load();
+    await product.read();
 
     expect(product.name).toBe('bar');
 
@@ -543,7 +543,7 @@ describe('orm test', ()=>{
     const office = new Address(null, {database:db});
     office.address1 = 'Planet Y';
     office.person_id = peter.id;
-    await office.save();
+    await office.write();
 
     expect(office.address1).toBe('Planet Y');
 
@@ -564,7 +564,7 @@ describe('orm test', ()=>{
     const peter = new Person();
 
     try{
-      await peter.save();
+      await peter.write();
       expect('this line should not be run').toBe('');
     }catch(e){
       expect(e.message).toBe("Cannot read property 'prepare' of null")
@@ -572,7 +572,7 @@ describe('orm test', ()=>{
 
   });
 
-  test('ORM load fail', async ()=>{
+  test('ORM read fail', async ()=>{
     const dbPath = path.normalize(__dirname+'/orm/db/belongsTo22.sqlite');
     if(fs.existsSync(dbPath))fs.unlinkSync(dbPath);
     fs.copyFileSync(__dirname+'/orm/db/belongsTo.default.sqlite', dbPath);
@@ -584,7 +584,7 @@ describe('orm test', ()=>{
     const a = new Person('1000', {database: db});
 
     try{
-      await a.load();
+      await a.read();
       expect('this line should not be loaded').toBe(false);
     }catch (e){
       expect(e.message).toBe(`Record not found. Person id:1000{
@@ -623,7 +623,7 @@ END;
     const Person = KohanaJS.require('model/Person');
     const p = ORM.create(Person, {database: db });
     p.enable = true;
-    await p.save();
+    await p.write();
 
     const r = await ORM.factory(Person, p.id, {database: db});
 
@@ -631,7 +631,7 @@ END;
 
     const p2 = ORM.create(Person, {database: db});
     p2.enable = false;
-    await p2.save();
+    await p2.write();
 
     const r2 = await ORM.factory(Person, p.id, {database: db});
     expect(r2.enable ? true : false).toBe(true);
@@ -667,24 +667,24 @@ END;
     p.name = 'Alice';
     p.email = 'alice@example.com'
     p.enable = true;
-    await p.save();
+    await p.write();
 
     const p2 = ORM.create(Person, {database: db});
     p2.name = 'Bob';
     p2.enable = false;
-    await p2.save();
+    await p2.write();
 
     const r = ORM.create(Person, {database: db});
     r.name = 'Alice';
-    await r.load();
+    await r.read();
     expect(r.id).toBe(p.id);
 
     const r2 = ORM.create(Person, {database: db});
     try{
-      await r2.load();
+      await r2.read();
       expect('this line shoulld not be loaded').toBe(false);
     }catch (e){
-      expect(e.message).toBe('Person: No id and no value to load');
+      expect(e.message).toBe('Person: No id and no value to read');
     }
 
     expect(r2.id).toBe(null);
@@ -698,7 +698,7 @@ END;
     a.defaultID();
     a.processValues();
 
-    await a.load();
+    await a.read();
     await a.update([]);
     await a.insert([]);
     await a.delete();
@@ -709,10 +709,10 @@ END;
     await a.remove(p, 'test', 'lk', 'fk');
     await a.removeAll('test', 'lk');
 
-    await a.loadAll();
-    await a.loadAll(new Map());
-    await a.loadBy('id', [1,2,3,4])
-    await a.loadWith([['', 'id', 'EQUAL', 1], ['AND', 'name', 'EQUAL', 'test']]);
+    await a.readAll();
+    await a.readAll(new Map());
+    await a.readBy('id', [1,2,3,4])
+    await a.readWith([['', 'id', 'EQUAL', 1], ['AND', 'name', 'EQUAL', 'test']]);
 
     await a.deleteAll();
     await a.deleteAll(new Map());
@@ -746,144 +746,5 @@ END;
       ORM.classPrefix = 'model/';
       expect(e.message).toBe('KohanaJS resolve path error: path models/Person.js not found. classes , {} ');
     }
-  })
-
-  test('filter by', async ()=>{
-    KohanaJS.init(__dirname+'/test16');
-
-    //idx is autoincrement primary key
-    const targetPath = path.normalize(__dirname+'/test16/db/empty.sqlite');
-    const sourcePath = path.normalize(__dirname+'/orm/db/empty.default.sqlite');
-    if(fs.existsSync(targetPath))fs.unlinkSync(targetPath);
-
-    fs.copyFileSync(sourcePath, targetPath);
-
-    const db = new Database(targetPath);
-    db.exec(`
-CREATE TABLE persons(
-id INTEGER UNIQUE DEFAULT ((( strftime('%s','now') - 1563741060 ) * 100000) + (RANDOM() & 65535)) NOT NULL ,
-created_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL ,
-updated_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL ,
-enable BOOLEAN,
-name TEXT,
-email TEXT); 
-
-CREATE TRIGGER persons_updated_at AFTER UPDATE ON persons WHEN old.updated_at < CURRENT_TIMESTAMP BEGIN
-UPDATE persons SET updated_at = CURRENT_TIMESTAMP WHERE id = old.id;
-END;
-`);
-
-    ORM.database = db;
-
-    const Person = KohanaJS.require('model/Person');
-    const p = ORM.create(Person);
-    p.name = 'Alice';
-    p.email = 'alice@example.com'
-    p.enable = true;
-    await p.save();
-
-    const p2 = ORM.create(Person);
-    p2.name = 'Bob';
-    p2.email = 'bob@example.com';
-    p2.enable = true;
-    await p2.save();
-
-    const p3 = ORM.create(Person);
-    p3.name = 'Charlie';
-    p3.email = 'charlie@example.com';
-    p3.enable = false;
-    await p3.save();
-
-    const p4 = ORM.create(Person);
-    p4.name = 'Danny';
-    p4.email = 'danny@example.com';
-    p4.enable = true;
-    await p4.save();
-
-    const p5 = ORM.create(Person);
-    p5.name = 'Eric';
-    p5.email = 'eric@example.com';
-    p5.enable = false;
-    await p5.save();
-
-    const px = ORM.create(Person);
-    px.name = 'Eric';
-    await px.load();
-    expect(px.email).toBe('eric@example.com');
-
-    const people = await ORM.loadBy(Person, 'name', ["Alice", "Bob", "Eric", "Frank"], {database: db});
-    expect(people.length).toBe(3);
-
-    const falsy = await ORM.loadBy(Person, 'enable', [false]);
-    expect(falsy.length).toBe(2);
-  })
-
-  test('filter', async ()=>{
-    KohanaJS.init(__dirname+'/test17');
-
-    //idx is autoincrement primary key
-    const targetPath = path.normalize(__dirname+'/test17/db/empty.sqlite');
-    const sourcePath = path.normalize(__dirname+'/orm/db/empty.default.sqlite');
-    if(fs.existsSync(targetPath))fs.unlinkSync(targetPath);
-
-    fs.copyFileSync(sourcePath, targetPath);
-
-    const db = new Database(targetPath);
-    db.exec(`
-CREATE TABLE persons(
-id INTEGER UNIQUE DEFAULT ((( strftime('%s','now') - 1563741060 ) * 100000) + (RANDOM() & 65535)) NOT NULL ,
-created_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL ,
-updated_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL ,
-enable BOOLEAN,
-name TEXT,
-email TEXT); 
-
-CREATE TRIGGER persons_updated_at AFTER UPDATE ON persons WHEN old.updated_at < CURRENT_TIMESTAMP BEGIN
-UPDATE persons SET updated_at = CURRENT_TIMESTAMP WHERE id = old.id;
-END;
-
-INSERT INTO persons (id, enable, name, email) VALUES (1, 1, 'Alice', 'alice@example.com');
-INSERT INTO persons (id, enable, name, email) VALUES (2, 1, 'Bob', 'bob@example.com');
-INSERT INTO persons (id, enable, name, email) VALUES (3, 0, 'Charlie', 'charlie@example.com');
-INSERT INTO persons (id, enable, name, email) VALUES (4, 0, 'Dennis', 'dennis@example.com');
-INSERT INTO persons (id, enable, name, email) VALUES (5, 1, 'Eric', 'eric@example.com');
-INSERT INTO persons (id, enable, name, email) VALUES (6, 0, 'Frank', 'frank@example.com');
-`);
-
-    ORM.database = db;
-    //const res = db.prepare("SELECT * FROM persons WHERE enable = 1 AND (name = 'Alice' OR name = 'Bob' OR name = 'Charlie' OR name = 'Eric')").all();
-    const Person = KohanaJS.require('model/Person');
-
-    const people = await ORM.loadWith(Person, [
-      ['', 'enable', EQUAL, TRUE],
-      [AND],
-      [START_GROUP],
-      ['', 'name', EQUAL, 'Alice'],
-      [OR, 'name', EQUAL, 'Bob'],
-      [OR, 'name', EQUAL, 'Charlie'],
-      [OR, 'name', EQUAL, 'Eric'],
-      [END_GROUP]
-    ], {database: db});
-    expect(people.length).toBe(3);
-
-    const empty = await ORM.loadWith(Person, [], {adapter: require('../../classes/ORMAdapter/SQLite')});
-    expect(empty.length).toBe(0);
-
-    Person.defaultAdapter = require('../../classes/ORMAdapter/SQLite');
-    const empty2 = await ORM.loadWith(Person);
-    expect(empty2.length).toBe(0);
-
-    const dennis = await ORM.loadWith(Person, [['', 'id', EQUAL, 4]]);
-    expect(dennis[0].email).toBe('dennis@example.com');
-
-    try{
-      await ORM.loadWith(Person, ['', 'id', EQUAL, 4]);
-      expect('this line should not be run').toBe(false);
-    }catch(e){
-      expect(e.message).toBe('criteria must group by array.');
-    }
-
-    const res = await ORM.loadWith(Person);
-    expect(res.length).toBe(0);
   })
 });
