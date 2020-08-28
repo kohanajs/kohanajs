@@ -36,8 +36,9 @@ class ORM extends Model{
   static joinTablePrefix = null;
   static fields = new Map();
   static belongsTo = new Map();
-  static hasMany = [];//hasMany cannot be Map, because children models may share same fk name.
-  static belongsToMany = [];
+  //hasMany cannot be Map, because children models may share same fk name.
+  static hasMany = [];
+  static belongsToMany = new Set();
 
   static defaultDatabase = null;
   static defaultAdapter = require('./ORMAdapter/SQLite');
