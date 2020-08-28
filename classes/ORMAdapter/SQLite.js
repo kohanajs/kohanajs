@@ -10,7 +10,6 @@ class ORMAdapterSQLite extends ORMAdapter{
   translateValue(values){
     return values.map(x =>{
       if(typeof x === 'boolean')return x ? 1 : 0;
-      if(x === null)return 'NULL';
       return x;
     })
   }
@@ -53,7 +52,7 @@ class ORMAdapterSQLite extends ORMAdapter{
     this.database.prepare(`DELETE FROM ${jointTablename} WHERE ${lk} = ?`).run(this.client.id);
   }
 
-  async readAll(kv=null){
+  async readAll(kv){
     if(!kv)return this.database.prepare(`SELECT * from ${this.tableName}`).all();
     const v = this.translateValue(Array.from(kv.values()));
     return this.database.prepare(`SELECT * FROM ${this.tableName} WHERE ${Array.from(kv.keys()).map( k => `${k} = ?`).join(' AND ')}`).all(...v);
@@ -71,7 +70,7 @@ class ORMAdapterSQLite extends ORMAdapter{
     return this.database.prepare(sql).all();
   }
 
-  async deleteAll(kv=null){
+  async deleteAll(kv){
     if(!kv)return this.database.prepare(`DELETE FROM ${this.tableName}`).run();
     const v = this.translateValue(Array.from(kv.values()));
     return this.database.prepare(`DELETE FROM ${this.tableName} WHERE ${Array.from(kv.keys()).map( k => `${k} = ?`).join(' AND ')}`).run(...v);
@@ -111,6 +110,17 @@ class ORMAdapterSQLite extends ORMAdapter{
     const wheres = this.formatCriteria(criteria);
     const sql = `UPDATE ${this.tableName} SET ${keys.map(key => `${key} = ?`)} WHERE ${wheres.join('')}`;
     return this.database.prepare(sql).run(...newValues);
+  }
+
+  async insertAll(columns, valueGroups, ids){
+    const sql = `INSERT INTO ${this.tableName} (${columns.join(', ')}, id) VALUES ${valueGroups.map(values=> '(' + values.map(()=>'?').join(', ')+', ?)').join(', ')}`
+    //valueGroup need to process, add id, translateValues
+    const newValueGroups = valueGroups.map((values, i) => {
+      const newValues = this.translateValue(values);
+      newValues.push(ids[i] || this.defaultID());
+      return newValues;
+    });
+    return this.database.prepare(sql).run(...newValueGroups.flat());
   }
 }
 

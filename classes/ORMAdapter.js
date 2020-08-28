@@ -129,7 +129,7 @@ class ORMAdapter{
    * @param {Map} kv
    * @returns {Promise<void>}
    */
-  async readAll(kv=null){}
+  async readAll(kv){}
   /**
    *
    * @param {string} key
@@ -149,7 +149,7 @@ class ORMAdapter{
    * @param {Map} kv
    * @returns {Promise<void>}
    */
-  async deleteAll(kv = null){}
+  async deleteAll(kv ){}
   /**
    *
    * @param {string} key
@@ -185,6 +185,15 @@ class ORMAdapter{
    * @returns {Promise<void>}
    */
   async updateWith(criteria, columnValues){}
+
+  /**
+   *
+   * @param {[]} columns
+   * @param {[[]]} valueGroups
+   * @param {number[]} ids
+   * @returns {Promise<void>}
+   */
+  async insertAll(columns, valueGroups, ids){}
 }
 
 module.exports = ORMAdapter;

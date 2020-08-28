@@ -144,6 +144,13 @@ describe('orm test', ()=>{
         const owner = await home.parent('person_id');
         expect(owner.first_name).toBe('Peter');
 
+        try{
+          const owner = await home.parent('fake_id');
+          exepect('this line should not be run').toBe(false);
+        }catch (e){
+          expect(e.message).toBe('fake_id is not foreign key in Address')
+        }
+
         const office = new Address();
         office.address1 = 'Planet Y';
         office.person_id = peter.id;
@@ -723,6 +730,7 @@ END;
     await a.updateAll(new Map());
     await a.updateBy('id', [1,2,3,4])
     await a.updateWith([['', 'id', 'EQUAL', 1], ['AND', 'name', 'EQUAL', 'test']]);
+    await a.insertAll([],[],[]);
 
     a.defaultID();
     a.op('');

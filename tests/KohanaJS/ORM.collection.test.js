@@ -217,4 +217,44 @@ INSERT INTO persons (id, enable, name, email) VALUES (6, 0, 'Frank', 'frank@exam
     expect(r[5].name).toBe('anonymous')
   });
 
+  test('insert all', async ()=>{
+
+    await ORM.insertAll(Person, ['enable', 'name', 'email'], [
+      [true, 'George', 'george@example.com'],
+      [true, 'Hong', 'hong@example.com'],
+      [true, 'Ivy', 'ivy@example.com'],
+      [false, 'Joanna', 'joanna@example.com'],
+      [true, 'Ken', 'ken@example.com'],
+    ], {database: db});
+
+    const r = await ORM.readAll(Person);
+
+    expect(r[6].name).toBe('George')
+    expect(r[7].name).toBe('Hong')
+    expect(r[8].name).toBe('Ivy')
+    expect(r[9].name).toBe('Joanna')
+    expect(r[10].name).toBe('Ken')
+
+  });
+
+  test('insert all with ids', async ()=>{
+
+    await ORM.insertAll(Person, ['enable', 'name', 'email'], [
+      [true, 'George', 'george@example.com'],
+      [true, 'Hong', 'hong@example.com'],
+      [true, 'Ivy', 'ivy@example.com'],
+      [false, 'Joanna', 'joanna@example.com'],
+      [true, 'Ken', 'ken@example.com'],
+    ], {database: db, insertIDs: [111,222,333,444,555,666]});
+
+    const r = await ORM.readAll(Person);
+
+    expect(r[6].id).toBe(111)
+    expect(r[7].id).toBe(222)
+    expect(r[8].id).toBe(333)
+    expect(r[9].id).toBe(444)
+    expect(r[10].id).toBe(555)
+
+  });
+
 });

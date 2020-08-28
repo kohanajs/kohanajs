@@ -113,7 +113,7 @@ class ORM extends Model{
     if(this.id){
       await this.adapter.update(this.adapter.processValues());
     }else{
-      this.id = this.options.createWithId || this.adapter.defaultID();
+      this.id = this.options.insertID || this.adapter.defaultID();
       await this.adapter.insert(this.adapter.processValues());
     }
 
@@ -173,7 +173,7 @@ class ORM extends Model{
    * @returns {Promise<*>}
    */
   async parent(fk){
-    if(!this[fk])throw new Error(`${fk} is undefined`);
+    if(!this[fk])throw new Error(`${fk} is not foreign key in ${this.constructor.name}`);
 
     const modelName = this.constructor.belongsTo.get(fk);
     const Model = KohanaJS.require(`${this.constructor.classPrefix}/${modelName}`);
@@ -320,7 +320,7 @@ class ORM extends Model{
 
   /**
    *
-   * @param {Function} Model
+   * @param {Function<ORM>} Model
    * @param {string} key
    * @param {[]} values
    * @param options
@@ -333,8 +333,8 @@ class ORM extends Model{
 
   /**
    * Given criterias [['', 'id', SQL.EQUAL, 11], [SQL.AND, 'name', SQL.EQUAL, 'peter']]
-   * @param Model
-   * @param criteria
+   * @param {Function<ORM>} Model
+   * @param {[[string]]}criteria
    * @param options
    * @returns {Promise<*>}
    */
@@ -346,7 +346,7 @@ class ORM extends Model{
   }
 
   /**
-   * @param {Function} Model
+   * @param {Function<ORM>} Model
    * @param options
    * @param {Map} kv
    * @param {Map} columnValues
@@ -358,7 +358,7 @@ class ORM extends Model{
 
   /**
    *
-   * @param {Function} Model
+   * @param {Function<ORM>} Model
    * @param options
    * @param {string} key
    * @param {[]} values
@@ -372,7 +372,7 @@ class ORM extends Model{
 
   /**
    * Given criterias [['', 'id', SQL.EQUAL, 11], [SQL.AND, 'name', SQL.EQUAL, 'peter']]
-   * @param {Function} Model
+   * @param {Function<ORM>} Model
    * @param options
    * @param {[[string]]}criteria
    * @param {Map} columnValues
@@ -383,6 +383,24 @@ class ORM extends Model{
 
     const m = ORM.create(Model, Object.assign({database: this.database}, options));
     return await m.adapter.updateWith(criteria, columnValues);
+  }
+
+  /**
+   *
+   * @param {Function<ORM>} Model
+   * @param options
+   * @param {string[]} columns
+   * @param {[String[]]} values
+   * @returns {Promise<void>}
+   */
+  static async insertAll(Model, columns, values, options={}){
+    //verify columns
+    columns.forEach(x => {
+      if(!Model.fields.has(x))throw new Error('insert invalid columns');
+    })
+
+    const m = ORM.create(Model, Object.assign({database: this.database}, options));
+    return await m.adapter.insertAll(columns, values, options.insertIDs || []);
   }
 }
 
