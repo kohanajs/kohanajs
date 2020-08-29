@@ -1,37 +1,14 @@
 const ORM = require('../../../../../../classes/ORM');
 
 class Tag extends ORM{
-  constructor(id, db) {
-    super(id, db);
+  name;
 
-    if(id)return;
+  static joinTablePrefix = 'tag';
+  static tableName = 'tags';
 
-    //foreignKeys
-
-
-    //fields
-    this.name = null;
-  }
+  static fields = new Map([
+    ['name', 'String']
+  ]);
 }
-
-Tag.jointTablePrefix = 'tag';
-Tag.tableName = 'tags';
-
-Tag.fields = new Map([
-  ['name', 'String']
-]);
-
-Tag.belongsTo = new Map([
-  
-]);
-
-Tag.hasMany = [
-  
-];
-
-Tag.belongsToMany = [
-  
-];
-
 
 module.exports = Tag;

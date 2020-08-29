@@ -110,12 +110,12 @@ class ORMAdapter{
   async add(models, weight, jointTableName, lk, fk){}
   /**
    * remove
-   * @param {ORM} model
+   * @param {ORM[]} models
    * @param {string} jointTableName
    * @param {string} lk
    * @param {string} fk
    */
-  async remove(model, jointTableName, lk, fk){}
+  async remove(models, jointTableName, lk, fk){}
   /**
    *
    * @param {string} jointTableName

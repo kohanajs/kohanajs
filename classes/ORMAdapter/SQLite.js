@@ -44,8 +44,10 @@ class ORMAdapterSQLite extends ORMAdapter{
     this.database.prepare(`INSERT OR IGNORE INTO ${jointTableName} (${lk}, ${fk}, weight) VALUES ${values.join(', ')}`).run(...ids);
   }
 
-  async remove(model, jointTableName, lk, fk){
-    this.database.prepare(`DELETE FROM ${jointTableName} WHERE ${lk} = ? AND ${fk} = ?`).run(this.client.id, model.id);
+  async remove(models, jointTableName, lk, fk){
+    const ids = models.map(x=> x.id);
+    const sql = `DELETE FROM ${jointTableName} WHERE ${lk} = ${this.client.id} AND ${fk} IN (${ids.map(()=>'?').join(', ')})`;
+    this.database.prepare(sql).run(...ids);
   }
 
   async removeAll(jointTablename, lk){
@@ -53,7 +55,7 @@ class ORMAdapterSQLite extends ORMAdapter{
   }
 
   async readAll(kv){
-    if(!kv)return this.database.prepare(`SELECT * from ${this.tableName}`).all();
+    if(!kv)return this.database.prepare(`SELECT * FROM ${this.tableName}`).all();
     const v = this.translateValue(Array.from(kv.values()));
     return this.database.prepare(`SELECT * FROM ${this.tableName} WHERE ${Array.from(kv.keys()).map( k => `${k} = ?`).join(' AND ')}`).all(...v);
   }

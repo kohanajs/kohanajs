@@ -1,55 +1,47 @@
 const ORM = require('../../../../../../classes/ORM');
 
 class Product extends ORM{
-  constructor(id, db) {
-    super(id, db);
+  //foreignKeys
+  default_image_id = null;
+  type_id = null;
+  vendor_id = null;
+  name = null;
+  content = null;
+  handle = null;
+  title = null;
+  description = null;
+  template_suffix = null;
+  available = null;
 
-    if(id)return;
+  static joinTablePrefix = 'product';
+  static tableName = 'products';
 
-    //foreignKeys
-    this.default_image_id = null;
-    this.type_id = null;
-    this.vendor_id = null;
+  static fields = new Map([
+    ['name', 'String'],
+    ['content', 'String'],
+    ['handle', 'String'],
+    ['title', 'String'],
+    ['description', 'String'],
+    ['template_suffix', 'String'],
+    ['available', 'Boolean!'],
+  ]);
 
-    //fields
-    this.name = null;
-    this.content = null;
-    this.handle = null;
-    this.title = null;
-    this.description = null;
-    this.template_suffix = null;
-    this.available = null;
-  }
+  static belongsTo = new Map([
+    ['default_image_id', 'Image'],
+    ['type_id', 'Type'],
+    ['vendor_id', 'Vendor']
+  ]);
+
+  static hasMany = [
+    ['product_id', 'Variant'],
+    ['product_id', 'LineItem'],
+    ['product_id', 'GiftCard']
+  ];
+
+  static belongsToMany = new Set([
+    'Tag',
+  ]);
 }
-
-Product.jointTablePrefix = 'product';
-Product.tableName = 'products';
-
-Product.fields = new Map([
-  ['name', 'String'],
-  ['content', 'String'],
-  ['handle', 'String'],
-  ['title', 'String'],
-  ['description', 'String'],
-  ['template_suffix', 'String'],
-  ['available', 'Boolean!'],
-]);
-
-Product.belongsTo = new Map([
-  ['default_image_id', 'Image'],
-  ['type_id', 'Type'],
-  ['vendor_id', 'Vendor']
-]);
-
-Product.hasMany = [
-  ['product_id', 'Variant'],
-  ['product_id', 'LineItem'],
-  ['product_id', 'GiftCard']
-];
-
-Product.belongsToMany = [
-  'Tag',
-];
 
 
 module.exports = Product;

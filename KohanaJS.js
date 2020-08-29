@@ -100,6 +100,12 @@ class KohanaJS{
   static require(pathToFile){
     //pathToFile may include file extension;
     pathToFile = /\..*$/.test(pathToFile) ? pathToFile : (pathToFile + '.js');
+
+    //if explicit set classPath to Class, just return it.
+    if(typeof KohanaJS.classPath.get(pathToFile) === 'function'){
+      return KohanaJS.classPath.get(pathToFile);
+    }
+
     const file = KohanaJS.#resolve(pathToFile, 'classes', KohanaJS.classPath);
     return require(file);
   }

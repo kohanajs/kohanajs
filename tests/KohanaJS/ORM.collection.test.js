@@ -172,6 +172,26 @@ INSERT INTO persons (id, enable, name, email) VALUES (6, 0, 'Frank', 'frank@exam
     expect(r.length).toBe(2);
   });
 
+  test('delete without criteria', async ()=>{
+    try{
+      await ORM.deleteWith(Person, null);
+    }catch(e){
+      expect(e.message).toBe('Person delete with no criteria')
+    }
+
+    try{
+      await ORM.updateWith(Person, null, new Map());
+    }catch(e){
+      expect(e.message).toBe('Person update with no criteria')
+    }
+
+    try{
+      await ORM.updateWith(Person, [[],[]], new Map());
+    }catch(e){
+      expect(e.message).toBe('Person update without values')
+    }
+  });
+
   test('update all', async ()=>{
     await ORM.updateAll(Person, new Map([['enable', false]]), new Map([['email', 'goodbye@example.com']]));
     const r = db.prepare(`SELECT * from persons WHERE enable = ?`).all(0);
@@ -235,6 +255,17 @@ INSERT INTO persons (id, enable, name, email) VALUES (6, 0, 'Frank', 'frank@exam
     expect(r[9].name).toBe('Joanna')
     expect(r[10].name).toBe('Ken')
 
+    try{
+      await ORM.insertAll(Person, ['enable', 'name', 'xxx'], [
+        [true, 'George', 'george@example.com'],
+        [true, 'Hong', 'hong@example.com'],
+        [true, 'Ivy', 'ivy@example.com'],
+        [false, 'Joanna', 'joanna@example.com'],
+        [true, 'Ken', 'ken@example.com'],
+      ]);
+    }catch(e){
+      expect(e.message).toBe('Person insert invalid columns xxx');
+    }
   });
 
   test('insert all with ids', async ()=>{

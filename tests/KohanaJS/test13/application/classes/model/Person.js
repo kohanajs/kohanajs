@@ -9,7 +9,7 @@ class Person extends ORM{
   }
 }
 
-Person.jointTablePrefix = 'person';
+Person.joinTablePrefix = 'person';
 Person.tableName = 'persons';
 
 Person.fields = new Map([

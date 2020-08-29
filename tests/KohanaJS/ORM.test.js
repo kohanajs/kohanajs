@@ -115,7 +115,7 @@ describe('orm test', ()=>{
         expect(AliasModel.tableName).toBe('testmodels');
 
         new AliasModel();
-        expect(AliasModel.jointTablePrefix).toBe('testmodel');
+        expect(AliasModel.joinTablePrefix).toBe('testmodel');
 
         const model = await ORM.factory(AliasModel, 1, {database:db});
         expect(model.text).toBe('Hello');
@@ -167,6 +167,7 @@ describe('orm test', ()=>{
         }catch (e){
           expect(e.message).toBe('children fk have multiple Models, please specific which Model will be used');
         }
+
 
     });
 
@@ -556,7 +557,7 @@ describe('orm test', ()=>{
 
     Address.tableName = null;
     try{
-      const addresses = await peter.children('product_id', Address);
+      await peter.children('product_id', Address);
     }catch(e){
       expect(e.message).toBe('near "null": syntax error');
     }

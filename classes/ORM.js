@@ -29,7 +29,7 @@ const KohanaJS = require('../KohanaJS');
 const {Model} = require('@kohanajs/core-mvc');
 
 class ORM extends Model{
-  //ORM is abstract, jointTablePrefix and tableName is null.
+  //ORM is abstract, joinTablePrefix and tableName is null.
   static database = null;
 
   static tableName = null;
@@ -40,7 +40,6 @@ class ORM extends Model{
   static hasMany = [];
   static belongsToMany = new Set();
 
-  static defaultDatabase = null;
   static defaultAdapter = require('./ORMAdapter/SQLite');
   static classPrefix = 'model/';
 
@@ -54,8 +53,8 @@ class ORM extends Model{
       if(!this.constructor.tableName){
         this.constructor.tableName = pluralize(this.constructor.name).toLowerCase();
       }
-      if(!this.constructor.jointTablePrefix){
-        this.constructor.jointTablePrefix = pluralize.singular(this.constructor.tableName);
+      if(!this.constructor.joinTablePrefix){
+        this.constructor.joinTablePrefix = pluralize.singular(this.constructor.tableName);
       }
     }
 
@@ -169,8 +168,6 @@ class ORM extends Model{
   /**
    *
    * @param fk
-   * @param database
-   * @param modelClassPath
    * @returns {Promise<*>}
    */
   async parent(fk){
@@ -185,58 +182,60 @@ class ORM extends Model{
    * has many
    * @param {ORM} Model
    * @param {string} fk
-   * @param {*} database
    * @return {[]}
    */
   async children(fk, Model= null){
     const modelNames = this.constructor.hasMany.filter( value => (value[0] === fk));
     if(modelNames.length > 1 && Model === null)throw new Error('children fk have multiple Models, please specific which Model will be used');
-
-    const ModelClass = Model || KohanaJS.require(`${this.constructor.classPrefix}/${modelNames[0]}`);
+    const ModelClass = Model || KohanaJS.require(`${this.constructor.classPrefix}${modelNames[0][1]}`);
 
     const results = await this.adapter.hasMany(ModelClass.tableName, fk);
     return results.map(x => Object.assign(new ModelClass(null, {database : this.database}), x));
   }
 
   /**
-   *
-   * @param {ORM} Model
-   * @param {*} database
+   * Get siblings
+   * @param {Function<ORM>} Model
    * @return {[]}
    */
   async siblings(Model){
-    const jointTableName = this.constructor.jointTablePrefix + '_' + Model.tableName;
-    const lk = this.constructor.jointTablePrefix + '_id';
-    const fk = Model.jointTablePrefix + '_id';
+    if(!this.constructor.belongsToMany.has(Model.name))throw new Error(`${this.constructor.name} not have sibling type ${Model.name}`);
+    const joinTableName = this.constructor.joinTablePrefix + '_' + Model.tableName;
+    const lk = this.constructor.joinTablePrefix + '_id';
+    const fk = Model.joinTablePrefix + '_id';
 
-    const results = await this.adapter.belongsToMany(Model.tableName, jointTableName, lk, fk);
+    const results = await this.adapter.belongsToMany(Model.tableName, joinTableName, lk, fk);
     return results.map(x => Object.assign(ORM.create(Model, {database : this.database}), x));
   }
 
   /**
    * add belongsToMany
-   * @param {ORM} model
+   * @param {ORM | ORM[]} model
    * @param {number} weight
    * @returns void
    */
   async add(model, weight = 0){
-    const jointTableName = `${this.constructor.jointTablePrefix}_${model.constructor.tableName}`;
-    const lk = this.constructor.jointTablePrefix + '_id';
-    const fk = model.constructor.jointTablePrefix + '_id';
+    if(!this.id)throw new Error(`Cannot add ${model.constructor.name}. ${this.constructor.name} not have id`);
+    const m = Array.isArray(model) ? model[0] : model;
+    const joinTableName = `${this.constructor.joinTablePrefix}_${m.constructor.tableName}`;
+    const lk = this.constructor.joinTablePrefix + '_id';
+    const fk = m.constructor.joinTablePrefix + '_id';
 
-    await this.adapter.add([model], weight, jointTableName, lk, fk);
+    await this.adapter.add(Array.isArray(model) ? model : [model], weight, joinTableName, lk, fk);
   }
 
   /**
    * remove
-   * @param {ORM} model
+   * @param {ORM| ORM[]} model
    */
   async remove(model){
-    const jointTableName = `${this.constructor.jointTablePrefix}_${model.constructor.tableName}`;
-    const lk = this.constructor.jointTablePrefix + '_id';
-    const fk = model.constructor.jointTablePrefix + '_id';
+    if(!this.id)throw new Error(`Cannot remove ${model.constructor.name}. ${this.constructor.name} not have id`);
+    const m = Array.isArray(model) ? model[0] : model;
+    const joinTableName = `${this.constructor.joinTablePrefix}_${m.constructor.tableName}`;
+    const lk = this.constructor.joinTablePrefix + '_id';
+    const fk = m.constructor.joinTablePrefix + '_id';
 
-    await this.adapter.remove(model, jointTableName, lk, fk);
+    await this.adapter.remove(Array.isArray(model) ? model : [model], joinTableName, lk, fk);
   }
 
   /**
@@ -245,9 +244,10 @@ class ORM extends Model{
    * @returns {Promise<void>}
    */
   async removeAll(Model){
-    const jointTableName = `${this.constructor.jointTablePrefix}_${Model.tableName}`;
-    const lk = this.constructor.jointTablePrefix + '_id';
-    await this.adapter.removeAll(jointTableName, lk);
+    if(!this.id)throw new Error(`Cannot remove ${Model.name}. ${this.constructor.name} not have id`);
+    const joinTableName = `${this.constructor.joinTablePrefix}_${Model.tableName}`;
+    const lk = this.constructor.joinTablePrefix + '_id';
+    await this.adapter.removeAll(joinTableName, lk);
   }
 
 
@@ -339,8 +339,8 @@ class ORM extends Model{
    * @param options
    * @returns {Promise<*>}
    */
-  static async deleteWith (Model, criteria=[], options = {}){
-    if(criteria.length === 0)return [];
+  static async deleteWith (Model, criteria, options = {}){
+    if(!criteria || criteria.length === 0)throw new Error(`${Model.name} delete with no criteria`);
 
     const m = ORM.create(Model, Object.assign({database: this.database}, options));
     return await m.adapter.deleteWith(criteria);
@@ -380,7 +380,8 @@ class ORM extends Model{
    * @returns {Promise<*>}
    */
   static async updateWith (Model, criteria, columnValues, options = {}){
-    if(criteria.length === 0)return [];
+    if(!criteria || criteria.length === 0)throw new Error(`${Model.name} update with no criteria`);
+    if(!columnValues || columnValues.size === 0)throw new Error(`${Model.name} update without values`);
 
     const m = ORM.create(Model, Object.assign({database: this.database}, options));
     return await m.adapter.updateWith(criteria, columnValues);
@@ -397,7 +398,7 @@ class ORM extends Model{
   static async insertAll(Model, columns, values, options={}){
     //verify columns
     columns.forEach(x => {
-      if(!Model.fields.has(x))throw new Error('insert invalid columns');
+      if(!Model.fields.has(x))throw new Error(`${Model.name} insert invalid columns ${x}`);
     })
 
     const m = ORM.create(Model, Object.assign({database: this.database}, options));
