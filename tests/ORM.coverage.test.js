@@ -188,5 +188,28 @@ INSERT INTO tags (id, name) VALUES (4, 'yellow');
     expect(verify).toHaveLength(1);
   });
 
+  test('add no relation sibling', async()=>{
+    const toy = await ORM.factory(Toy, 1);
+    const tag = await ORM.factory(Tag, 1);
+    const baby = await ORM.factory(Baby, 1);
 
+    await toy.add(tag);
+    const v1 = db.prepare('SELECT * FROM toy_tags').all();
+    expect(v1).toHaveLength(1);
+
+    await toy.remove(tag);
+    const v2 = db.prepare('SELECT * FROM toy_tags').all();
+    expect(v2).toHaveLength(0);
+
+    await tag.add(toy);
+    const v3 = db.prepare('SELECT * FROM toy_tags').all();
+    expect(v3).toHaveLength(1);
+
+    try{
+      await tag.add(baby);
+      expect('this line should not be run').toBeFalsy();
+    }catch(e){
+      expect(e.message).toBe('Tag and Baby not have many to many relationship');
+    }
+  })
 });

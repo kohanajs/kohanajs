@@ -193,6 +193,30 @@ class ORM extends Model{
     return results.map(x => Object.assign(new ModelClass(null, {database : this.database}), x));
   }
 
+  #siblingInfo(model){
+    const m = Array.isArray(model) ? model[0] : model;
+    const lk = this.constructor.joinTablePrefix + '_id';
+    const fk = m.constructor.joinTablePrefix + '_id';
+
+    if( !this.constructor.belongsToMany.has(m.constructor.name) ){
+      if(!m.constructor.belongsToMany.has(this.constructor.name)){
+        throw new Error(`${this.constructor.name} and ${m.constructor.name} not have many to many relationship`);
+      }
+
+      return {
+        joinTableName : `${m.constructor.joinTablePrefix}_${this.constructor.tableName}`,
+        lk: lk,
+        fk: fk
+      }
+    }
+
+    return {
+      joinTableName: `${this.constructor.joinTablePrefix}_${m.constructor.tableName}`,
+      lk: lk,
+      fk: fk
+    }
+  }
+
   /**
    * Get siblings
    * @param {Function<ORM>} Model
@@ -200,9 +224,7 @@ class ORM extends Model{
    */
   async siblings(Model){
     if(!this.constructor.belongsToMany.has(Model.name))throw new Error(`${this.constructor.name} not have sibling type ${Model.name}`);
-    const joinTableName = this.constructor.joinTablePrefix + '_' + Model.tableName;
-    const lk = this.constructor.joinTablePrefix + '_id';
-    const fk = Model.joinTablePrefix + '_id';
+    const {joinTableName, lk, fk} = this.#siblingInfo(ORM.create(Model));
 
     const results = await this.adapter.belongsToMany(Model.tableName, joinTableName, lk, fk);
     return results.map(x => Object.assign(ORM.create(Model, {database : this.database}), x));
@@ -216,11 +238,8 @@ class ORM extends Model{
    */
   async add(model, weight = 0){
     if(!this.id)throw new Error(`Cannot add ${model.constructor.name}. ${this.constructor.name} not have id`);
-    const m = Array.isArray(model) ? model[0] : model;
-    const joinTableName = `${this.constructor.joinTablePrefix}_${m.constructor.tableName}`;
-    const lk = this.constructor.joinTablePrefix + '_id';
-    const fk = m.constructor.joinTablePrefix + '_id';
 
+    const {joinTableName, lk, fk} = this.#siblingInfo(model);
     await this.adapter.add(Array.isArray(model) ? model : [model], weight, joinTableName, lk, fk);
   }
 
@@ -230,11 +249,8 @@ class ORM extends Model{
    */
   async remove(model){
     if(!this.id)throw new Error(`Cannot remove ${model.constructor.name}. ${this.constructor.name} not have id`);
-    const m = Array.isArray(model) ? model[0] : model;
-    const joinTableName = `${this.constructor.joinTablePrefix}_${m.constructor.tableName}`;
-    const lk = this.constructor.joinTablePrefix + '_id';
-    const fk = m.constructor.joinTablePrefix + '_id';
 
+    const {joinTableName, lk, fk} = this.#siblingInfo(model);
     await this.adapter.remove(Array.isArray(model) ? model : [model], joinTableName, lk, fk);
   }
 
@@ -245,8 +261,8 @@ class ORM extends Model{
    */
   async removeAll(Model){
     if(!this.id)throw new Error(`Cannot remove ${Model.name}. ${this.constructor.name} not have id`);
-    const joinTableName = `${this.constructor.joinTablePrefix}_${Model.tableName}`;
-    const lk = this.constructor.joinTablePrefix + '_id';
+
+    const {joinTableName, lk} = this.#siblingInfo(ORM.create(Model));
     await this.adapter.removeAll(joinTableName, lk);
   }
 
