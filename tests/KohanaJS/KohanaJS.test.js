@@ -283,4 +283,30 @@ describe('KohanaJS test', ()=>{
     const tar = new Tar();
     expect(tar.greeting()).toBe('Hello from Tar');
   })
+
+  test('dereference', ()=>{
+    const {dereference:$} = require('../../index');
+    const a = {foo: 'bar', kaa: 'laa'};
+
+    class C {
+      constructor(ref) {
+        this.ref = ref;
+      }
+
+      greeting(){
+        return 'hello ' + $(this.ref);
+      }
+    }
+
+    const ca = new C(a.foo); //pass by value
+    const cb = new C(()=>a.foo); //pass by reference
+    expect(ca.greeting()).toBe('hello bar');
+    expect(cb.greeting()).toBe('hello bar');
+
+    //source changed
+    a.foo = 'shaa';
+
+    expect(ca.greeting()).toBe('hello bar');
+    expect(cb.greeting()).toBe('hello shaa');
+  })
 });

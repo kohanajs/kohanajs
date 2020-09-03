@@ -35,7 +35,7 @@ module.exports = {
   ORMAdapter: require('./classes/ORMAdapter'),
   ORMAdapterSQLite : require('./classes/ORMAdapter/SQLite'),
   addNodeModule: KohanaJS.addNodeModule,
-
+  dereference : ref => (typeof ref === 'function')? ref() : ref,
   KohanaJS : KohanaJS,
   KOJS: KohanaJS,
   init : KohanaJS.init,
