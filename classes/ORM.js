@@ -292,7 +292,7 @@ class ORM extends Model{
   //Collection methods
   /**
    * read all records from the model
-   * @param {Function} Model
+   * @param {Function<ORM>} Model
    * @param {Map} kv
    * @param options
    * @returns {Promise<*>}
