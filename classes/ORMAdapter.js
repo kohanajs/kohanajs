@@ -127,20 +127,20 @@ class ORMAdapter{
   /**
    *
    * @param {Map} kv
-   * @returns {Promise<void>}
+   * @returns {[]}
    */
   async readAll(kv){}
   /**
    *
    * @param {string} key
    * @param {[]} values
-   * @returns {Promise<void>}
+   * @returns {[]}
    */
   async readBy(key, values){}
   /**
    *
    * @param {[[string]]}criteria
-   * @returns {Promise<void>}
+   * @returns {[]}
    */
   async readWith(criteria){}
 

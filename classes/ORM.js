@@ -294,15 +294,17 @@ class ORM extends Model{
    * read all records from the model
    * @param {Function<ORM>} Model
    * @param {Map} kv
-   * @param options
+   * @param {object} options
    * @returns {Promise<*>}
    */
-  static async readAll (Model, kv = null,options={}){
-    const m = ORM.create(Model, Object.assign({database: this.database}, options));
-    const records = await m.adapter.readAll(kv);
-    return records.map(x => Object.assign(new Model(null, options), x));
+  static async readAll (Model, kv = null, options={}){
+    const opt = Object.assign({database: this.database}, options);
+    const m = ORM.create(Model, opt);
+    const result = await m.adapter.readAll(kv);
+    if(result.length === 0)return null;
+    if(result.length === 1)return Object.assign(m, result[0]);
+    return result.map(x => Object.assign( ORM.create(Model, options), x));
   }
-
   /**
    *
    * @param Model
@@ -312,8 +314,12 @@ class ORM extends Model{
    * @returns []
    */
   static async readBy (Model, key, values, options={}) {
-    const m = ORM.create(Model, Object.assign({database: this.database}, options));
-    return m.adapter.readBy(key, values);
+    const opt = Object.assign({database: this.database}, options);
+    const m = ORM.create(Model, opt);
+    const result = await m.adapter.readBy(key, values);
+    if(result.length === 0)return null;
+    if(result.length === 1)return Object.assign(m, result[0]);
+    return result.map(x => Object.assign( ORM.create(Model, options), x));
   }
 
   /**
@@ -325,9 +331,12 @@ class ORM extends Model{
    */
   static async readWith (Model, criteria=[], options = {}){
     if(criteria.length === 0)return [];
-
-    const m = ORM.create(Model, Object.assign({database: this.database}, options));
-    return await m.adapter.readWith(criteria);
+    const opt = Object.assign({database: this.database}, options);
+    const m = ORM.create(Model, opt);
+    const result = await m.adapter.readWith(criteria);
+    if(result.length === 0)return null;
+    if(result.length === 1)return Object.assign(m, result[0]);
+    return result.map(x => Object.assign( ORM.create(Model, options), x));
   }
 
   static async deleteAll(Model, kv=null, options={}){
@@ -419,6 +428,10 @@ class ORM extends Model{
 
     const m = ORM.create(Model, Object.assign({database: this.database}, options));
     return await m.adapter.insertAll(columns, values, options.insertIDs || []);
+  }
+
+  static require(modelName){
+    return KohanaJS.require(ORM.classPrefix + modelName);
   }
 }
 
