@@ -1,4 +1,5 @@
-const {ControllerMixin, dereference: $} = require('../../index');
+const {ControllerMixin} = require("@kohanajs/core-mvc");
+const $ = ref => (typeof ref === 'function')? ref() : ref;
 
 class Mime extends ControllerMixin{
   constructor(client, headers) {

@@ -1,7 +1,8 @@
-const {KohanaJS, View, ControllerMixin} = require('../../index');
+const {ControllerMixin, View} = require("@kohanajs/core-mvc");
+const KohanaJS = require('../../KohanaJS');
 
 class ControllerMixinView extends ControllerMixin{
-  constructor(client, layout='layout/default', themePath= KohanaJS.VIEW_PATH, viewClass = View.defaultViewClass) {
+  constructor(client, layout='layout/default', themePath= null, viewClass = View.defaultViewClass) {
     super(client);
 
     this.layout = this.getView(layout, {}, themePath, viewClass);
@@ -21,7 +22,7 @@ class ControllerMixinView extends ControllerMixin{
     this.client.body = await this.layout.render();
   }
 
-  getView(path, data= {}, themePath = KohanaJS.VIEW_PATH, viewClass = View.defaultViewClass){
+  getView(path, data= {}, themePath = null, viewClass = View.defaultViewClass){
     return new viewClass(path, data, themePath);
   }
 }
