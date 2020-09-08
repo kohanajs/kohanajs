@@ -37,6 +37,9 @@ module.exports = {
   addNodeModule: KohanaJS.addNodeModule,
   dereference : ref => (typeof ref === 'function')? ref() : ref,
   KohanaJS : KohanaJS,
-  KOJS: KohanaJS,
   init : KohanaJS.init,
+
+  ControllerMixinMime : require('./classes/controller-mixin/Mime'),
+  ControllerMixinView : require('./classes/controller-mixin/View'),
+
 };
