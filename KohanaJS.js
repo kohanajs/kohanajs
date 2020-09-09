@@ -179,7 +179,7 @@ class KohanaJS{
 
       try{
         const file = KohanaJS.#resolve(fileName, 'config', KohanaJS.configPath, true);
-        KohanaJS.config[key] = require(file);
+        KohanaJS.config[key] = Object.assign({}, require(file));
         delete require.cache[path.normalize(file)];
       }catch{
         //file not found.
