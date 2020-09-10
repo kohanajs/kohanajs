@@ -1,3 +1,5 @@
 delete require.cache[require.resolve('./salt')];
 
-module.exports = 'default salt 1';
+module.exports = {
+  value : 'default salt 1'
+};

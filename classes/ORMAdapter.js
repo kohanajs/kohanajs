@@ -128,26 +128,30 @@ class ORMAdapter{
    *
    * @param {Map} kv
    * @returns {[]}
+   * @param {boolean} readSingleResult
+   * @returns {Promise<[]>}
    */
-  async readAll(kv){}
+  async readAll(kv, readSingleResult = false){}
   /**
    *
    * @param {string} key
    * @param {[]} values
-   * @returns {[]}
+   * @param {boolean} readSingleResult
+   * @returns {Promise<[]>}
    */
-  async readBy(key, values){}
+  async readBy(key, values, readSingleResult = false){}
   /**
    *
    * @param {[[string]]}criteria
-   * @returns {[]}
+   * @param {boolean} readSingleResult
+   * @returns {Promise<void>}
    */
-  async readWith(criteria){}
+  async readWith(criteria, readSingleResult = false){}
 
   /**
    *
    * @param {Map} kv
-   * @returns {Promise<void>}
+   * @returns {Promise<[]>}
    */
   async deleteAll(kv ){}
   /**

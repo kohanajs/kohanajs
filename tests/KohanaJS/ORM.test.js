@@ -269,6 +269,26 @@ describe('orm test', ()=>{
         const tags2 = await ORM.readAll(Tag, null);
         expect(tags2[0].name).toBe('foo');
         expect(tags2[1].name).toBe('tar');
+
+        const tags3 = await ORM.readAll(Tag, null, {readSingleResult : true});
+        expect(typeof tags3).not.toBe('array');
+        expect(tags3.name).toBe('foo');
+
+        const tags4 = await ORM.readAll(Tag, new Map([['name', 'not exist']]), {readSingleResult : true});
+        expect(tags4).toBe(null);
+
+        const tags5 = await ORM.readBy(Tag, 'name', ['foo', 'bar', 'tar']);
+        expect(tags5[0].name).toBe('foo');
+        expect(tags5[1].name).toBe('tar');
+
+        const tags6 = await ORM.readWith(Tag, [["", "name", EQUAL, "tar"]]);
+        expect(tags6.name).toBe('tar');
+
+        const tags7 = await ORM.readBy(Tag, 'name', ['foo', 'bar', 'tar'], {readSingleResult : true});
+        expect(tags7.name).toBe('foo');
+
+        const tags8 = await ORM.readWith(Tag, [["", "name", EQUAL, "tar"]], {readSingleResult : true});
+        expect(tags8.name).toBe('tar');
     });
 
     test('enumerate', async ()=>{
@@ -755,5 +775,12 @@ END;
       ORM.classPrefix = 'model/';
       expect(e.message).toBe('KohanaJS resolve path error: path models/Person.js not found. classes , {} ');
     }
+  })
+
+  test('ORM require', async ()=>{
+    KohanaJS.init(__dirname+'/test15');
+    const Person = ORM.require('Person');
+    const p = new Person();
+    expect(!!p).toBe(true);
   })
 });

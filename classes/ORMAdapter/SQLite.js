@@ -54,22 +54,41 @@ class ORMAdapterSQLite extends ORMAdapter{
     this.database.prepare(`DELETE FROM ${jointTablename} WHERE ${lk} = ?`).run(this.client.id);
   }
 
-  async readAll(kv){
-    if(!kv)return this.database.prepare(`SELECT * FROM ${this.tableName}`).all();
-    const v = this.translateValue(Array.from(kv.values()));
-    return this.database.prepare(`SELECT * FROM ${this.tableName} WHERE ${Array.from(kv.keys()).map( k => `${k} = ?`).join(' AND ')}`).all(...v);
+  async readResult(readSingleResult, sql, values){
+    const statement = this.database.prepare(sql);
+
+    if(readSingleResult){
+      const result = statement.get(...values);
+      if(!result)return [];
+      return [result];
+    }else{
+      return statement.all(...values);
+    }
   }
 
-  async readBy(key, values){
-    const v = this.translateValue(values);
-    return this.database.prepare(`SELECT * FROM ${this.tableName} WHERE ${key} IN (${v.map(() => "?").join(", ")})`).all(...v);
+  async readAll(kv, readSingleResult = false){
+    if(!kv){
+      return await this.readResult(readSingleResult,
+        `SELECT * FROM ${this.tableName}`,
+        []
+      );
+    }
+
+    return await this.readResult(readSingleResult,
+      `SELECT * FROM ${this.tableName} WHERE ${Array.from(kv.keys()).map( k => `${k} = ?`).join(' AND ')}`,
+      this.translateValue(Array.from(kv.values()))
+    );
   }
 
-  async readWith(criteria){
+  async readBy(key, values, readSingleResult = false){
+    return await this.readResult(readSingleResult,
+      `SELECT * FROM ${this.tableName} WHERE ${key} IN (${values.map(() => "?").join(", ")})`,
+      this.translateValue(values));
+  }
+
+  async readWith(criteria, readSingleResult = false){
     const wheres = this.formatCriteria(criteria);
-    const sql = `SELECT * FROM ${this.tableName} WHERE ${wheres.join('')}`;
-//    console.log(sql);
-    return this.database.prepare(sql).all();
+    return await this.readResult(readSingleResult, `SELECT * FROM ${this.tableName} WHERE ${wheres.join('')}`, []);
   }
 
   async deleteAll(kv){
@@ -86,7 +105,6 @@ class ORMAdapterSQLite extends ORMAdapter{
   async deleteWith(criteria){
     const wheres = this.formatCriteria(criteria);
     const sql = `DELETE FROM ${this.tableName} WHERE ${wheres.join('')}`;
-//    console.log(sql);
     return this.database.prepare(sql).run();
   }
 

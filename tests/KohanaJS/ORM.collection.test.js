@@ -118,7 +118,7 @@ INSERT INTO persons (id, enable, name, email) VALUES (6, 0, 'Frank', 'frank@exam
     expect(empty2.length).toBe(0);
 
     const dennis = await ORM.readWith(Person, [['', 'id', EQUAL, 4]]);
-    expect(dennis[0].email).toBe('dennis@example.com');
+    expect(dennis.email).toBe('dennis@example.com');
 
     try{
       await ORM.readWith(Person, ['', 'id', EQUAL, 4]);

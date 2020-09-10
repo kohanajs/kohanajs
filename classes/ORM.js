@@ -295,12 +295,12 @@ class ORM extends Model{
    * @param {Function<ORM>} Model
    * @param {Map} kv
    * @param {object} options
-   * @returns {Promise<*>}
+   * @returns {Promise<[]|object>}
    */
   static async readAll (Model, kv = null, options={}){
     const opt = Object.assign({database: this.database}, options);
     const m = ORM.create(Model, opt);
-    const result = await m.adapter.readAll(kv);
+    const result = await m.adapter.readAll(kv, options.readSingleResult === true);
     if(result.length === 0)return null;
     if(result.length === 1)return Object.assign(m, result[0]);
     return result.map(x => Object.assign( ORM.create(Model, options), x));
@@ -311,12 +311,12 @@ class ORM extends Model{
    * @param key
    * @param values
    * @param options
-   * @returns []
+   * @returns {Promise<[]|object>}
    */
   static async readBy (Model, key, values, options={}) {
     const opt = Object.assign({database: this.database}, options);
     const m = ORM.create(Model, opt);
-    const result = await m.adapter.readBy(key, values);
+    const result = await m.adapter.readBy(key, values, options.readSingleResult === true);
     if(result.length === 0)return null;
     if(result.length === 1)return Object.assign(m, result[0]);
     return result.map(x => Object.assign( ORM.create(Model, options), x));
@@ -327,13 +327,13 @@ class ORM extends Model{
    * @param Model
    * @param criteria
    * @param options
-   * @returns {Promise<*>}
+   * @returns {Promise<[]|object>}
    */
   static async readWith (Model, criteria=[], options = {}){
     if(criteria.length === 0)return [];
     const opt = Object.assign({database: this.database}, options);
     const m = ORM.create(Model, opt);
-    const result = await m.adapter.readWith(criteria);
+    const result = await m.adapter.readWith(criteria, options.readSingleResult === true);
     if(result.length === 0)return null;
     if(result.length === 1)return Object.assign(m, result[0]);
     return result.map(x => Object.assign( ORM.create(Model, options), x));
@@ -350,7 +350,7 @@ class ORM extends Model{
    * @param {string} key
    * @param {[]} values
    * @param options
-   * @returns []
+   * @returns {Promise<void>}
    */
   static async deleteBy (Model, key, values, options={}) {
     const m = ORM.create(Model, Object.assign({database: this.database}, options));
@@ -362,7 +362,7 @@ class ORM extends Model{
    * @param {Function<ORM>} Model
    * @param {[[string]]}criteria
    * @param options
-   * @returns {Promise<*>}
+   * @returns {Promise<void>}
    */
   static async deleteWith (Model, criteria, options = {}){
     if(!criteria || criteria.length === 0)throw new Error(`${Model.name} delete with no criteria`);
@@ -389,7 +389,7 @@ class ORM extends Model{
    * @param {string} key
    * @param {[]} values
    * @param {Map} columnValues
-   * @returns []
+   * @returns {Promise<void>}
    */
   static async updateBy (Model, key, values, columnValues, options={}) {
     const m = ORM.create(Model, Object.assign({database: this.database}, options));

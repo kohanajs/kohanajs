@@ -177,7 +177,7 @@ describe('KohanaJS test', ()=>{
       fs.copyFileSync(APP_PATH+'/config/salt.default.js', APP_PATH+'/config/salt.js');
       jest.resetModules();
       kohanaJS.updateConfig();
-      expect(kohanaJS.config.salt).toBe('default salt 1');
+      expect(kohanaJS.config.salt.value).toBe('default salt 1');
 
       fs.unlinkSync(APP_PATH+'/config/salt.js');
       jest.resetModules();
