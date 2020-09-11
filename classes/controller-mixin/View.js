@@ -28,9 +28,13 @@ class ControllerMixinView extends ControllerMixin{
   }
 
   async exit(code){
-    if(code!==404 || code !== 403 || code !== 500)return;
-
-    (this.errorTemplate) ? await this.errorTemplate.render() : this.client.body
+    if(code === 302) return;
+    if(this.errorTemplate){
+      Object.assign(this.errorTemplate.data, {body: this.client.body});
+      this.layout.data.main = await this.errorTemplate.render();
+    }else{
+      this.layout.data.main = this.client.body;
+    }
     this.client.body = await this.layout.render();
   }
 
