@@ -174,7 +174,7 @@ class ORM extends Model{
     if(!this[fk])throw new Error(`${fk} is not foreign key in ${this.constructor.name}`);
 
     const modelName = this.constructor.belongsTo.get(fk);
-    const Model = KohanaJS.require(`${this.constructor.classPrefix}/${modelName}`);
+    const Model = ORM.require(modelName);
     return await ORM.factory(Model, this[fk], {database: this.database});
   }
 
@@ -187,7 +187,7 @@ class ORM extends Model{
   async children(fk, Model= null){
     const modelNames = this.constructor.hasMany.filter( value => (value[0] === fk));
     if(modelNames.length > 1 && Model === null)throw new Error('children fk have multiple Models, please specific which Model will be used');
-    const ModelClass = Model || KohanaJS.require(`${this.constructor.classPrefix}${modelNames[0][1]}`);
+    const ModelClass = Model || ORM.require(modelNames[0][1]);
 
     const results = await this.adapter.hasMany(ModelClass.tableName, fk);
     return results.map(x => Object.assign(new ModelClass(null, {database : this.database}), x));
