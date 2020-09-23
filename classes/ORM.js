@@ -301,6 +301,8 @@ class ORM extends Model{
     const opt = Object.assign({database: this.database}, options);
     const m = ORM.create(Model, opt);
     const result = await m.adapter.readAll(kv, options.readSingleResult === true);
+
+    if(options.asArray)return result.map(x => Object.assign( ORM.create(Model, options), x));
     if(result.length === 0)return null;
     if(result.length === 1)return Object.assign(m, result[0]);
     return result.map(x => Object.assign( ORM.create(Model, options), x));
@@ -317,6 +319,8 @@ class ORM extends Model{
     const opt = Object.assign({database: this.database}, options);
     const m = ORM.create(Model, opt);
     const result = await m.adapter.readBy(key, values, options.readSingleResult === true);
+
+    if(options.asArray)return result.map(x => Object.assign( ORM.create(Model, options), x));
     if(result.length === 0)return null;
     if(result.length === 1)return Object.assign(m, result[0]);
     return result.map(x => Object.assign( ORM.create(Model, options), x));
@@ -334,6 +338,8 @@ class ORM extends Model{
     const opt = Object.assign({database: this.database}, options);
     const m = ORM.create(Model, opt);
     const result = await m.adapter.readWith(criteria, options.readSingleResult === true);
+
+    if(options.asArray)return result.map(x => Object.assign( ORM.create(Model, options), x));
     if(result.length === 0)return null;
     if(result.length === 1)return Object.assign(m, result[0]);
     return result.map(x => Object.assign( ORM.create(Model, options), x));
