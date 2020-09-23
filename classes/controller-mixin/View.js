@@ -6,10 +6,11 @@ class ControllerMixinView extends ControllerMixin{
   /** @type {View} */
   errorTemplate = null;
 
-  constructor(client, layout='layout/default', themePath= null, viewClass = View.defaultViewClass) {
+  constructor(client, layout='layout/default', placeHolder = 'main', themePath= null, viewClass = View.defaultViewClass) {
     super(client);
 
     this.layout = this.getView(layout, {}, themePath, viewClass);
+    this.placeHolder = placeHolder;
 
     this.exports = {
       getView          : (file, data= {}) => this.getView(file, data, themePath, viewClass),
@@ -23,7 +24,7 @@ class ControllerMixinView extends ControllerMixin{
   async after(){
     //render template and put into layout's main output.
     //no template, replace the controller body string into layout.
-    this.layout.data.main = (this.template) ? await this.template.render() : this.client.body;
+    this.layout.data[this.placeHolder] = (this.template) ? await this.template.render() : this.client.body;
     this.client.body = await this.layout.render();
   }
 
@@ -31,9 +32,9 @@ class ControllerMixinView extends ControllerMixin{
     if(code === 302) return;
     if(this.errorTemplate){
       Object.assign(this.errorTemplate.data, {body: this.client.body});
-      this.layout.data.main = await this.errorTemplate.render();
+      this.layout.data[this.placeHolder] = await this.errorTemplate.render();
     }else{
-      this.layout.data.main = this.client.body;
+      this.layout.data[this.placeHolder] = this.client.body;
     }
     this.client.body = await this.layout.render();
   }
