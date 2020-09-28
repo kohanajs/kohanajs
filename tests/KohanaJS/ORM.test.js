@@ -615,11 +615,7 @@ describe('orm test', ()=>{
       await a.read();
       expect('this line should not be loaded').toBe(false);
     }catch (e){
-      expect(e.message).toBe(`Record not found. Person id:1000{
-    "created_at": null,
-    "updated_at": null,
-    "id": "1000"
-}`)
+      expect(e.message).toBe(`Record not found. Person id:1000`)
     }
 
     expect(a.created_at).toBe(null);
@@ -782,5 +778,20 @@ END;
     const Person = ORM.require('Person');
     const p = new Person();
     expect(!!p).toBe(true);
+  });
+
+  test('ORM snapshot', async () => {
+    KohanaJS.init(__dirname+'/test15');
+    const Person = ORM.require('Person');
+    const p = new Person();
+    p.name = 'Alice';
+
+    p.snapshot();
+    p.name = 'Bob';
+    p.snapshot();
+    p.name = 'Charlie';
+
+    expect(p.states[0].name).toBe('Alice');
+    expect(p.states[1].name).toBe('Bob');
   })
 });
