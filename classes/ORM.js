@@ -70,6 +70,12 @@ class ORM extends Model{
       value : options
     });
 
+    //private property options
+    Object.defineProperty(this, "states", {
+      enumerable : false,
+      value : []
+    });
+
     const Adapter = options.adapter || this.constructor.defaultAdapter;
     const adapter = new Adapter(this, this.database);
 
@@ -90,6 +96,10 @@ class ORM extends Model{
     });
 
     this.id = id;
+  }
+
+  snapshot(){
+    this.states.push(Object.assign({}, this));
   }
 
   /**
@@ -131,7 +141,10 @@ class ORM extends Model{
         this.#readByValues()
     );
 
-    if(!result )throw new Error(`Record not found. ${this.constructor.name} id:${this.id}` + JSON.stringify(this, null, 4) );
+    if(!result ){
+      throw new Error(`Record not found. ${this.constructor.name} id:${this.id}` );
+    }
+
     Object.assign(this, result);
     return this;
   }
