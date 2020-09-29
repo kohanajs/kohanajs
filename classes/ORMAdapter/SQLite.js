@@ -23,7 +23,8 @@ class ORMAdapterSQLite extends ORMAdapter{
   }
 
   async insert(values){
-    this.database.prepare(`INSERT OR IGNORE INTO ${this.tableName} (${this.client.columns.join(', ')}, id) VALUES (?, ${this.client.columns.map(x => `?`).join(', ')})`).run(...values, this.client.id);
+    const sql = `INSERT OR FAIL INTO ${this.tableName} (${this.client.columns.join(', ')}, id) VALUES (?, ${this.client.columns.map(x => `?`).join(', ')})`;
+    this.database.prepare(sql).run(...values, this.client.id);
   }
 
   async delete(){
