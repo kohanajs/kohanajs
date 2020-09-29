@@ -184,7 +184,11 @@ class ORM extends Model{
    * @returns {Promise<*>}
    */
   async parent(fk){
-    if(!this[fk])throw new Error(`${fk} is not foreign key in ${this.constructor.name}`);
+    //this fk is null or *, but not undefined
+    if(this[fk] === null)return null;
+    if(this[fk] === undefined){
+      throw new Error(`${fk} is not foreign key in ${this.constructor.name}`);
+    }
 
     const modelName = this.constructor.belongsTo.get(fk);
     const Model = ORM.require(modelName);
