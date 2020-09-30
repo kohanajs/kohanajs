@@ -41,5 +41,5 @@ module.exports = {
 
   ControllerMixinMime : require('./classes/controller-mixin/Mime'),
   ControllerMixinView : require('./classes/controller-mixin/View'),
-
+  ControllerMixinMultipartForm : require('./classes/controller-mixin/MultipartForm'),
 };
