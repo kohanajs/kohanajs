@@ -102,8 +102,10 @@ class KohanaJS{
     pathToFile = /\..*$/.test(pathToFile) ? pathToFile : (pathToFile + '.js');
 
     //if explicit set classPath to Class or required object, just return it.
-    if(typeof KohanaJS.classPath.get(pathToFile) !== 'string'){
-      return KohanaJS.classPath.get(pathToFile);
+    const c = KohanaJS.classPath.get(pathToFile);
+
+    if(c && typeof c !== 'string'){
+      return c;
     }
 
     const file = KohanaJS.#resolve(pathToFile, 'classes', KohanaJS.classPath);
