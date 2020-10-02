@@ -101,8 +101,8 @@ class KohanaJS{
     //pathToFile may include file extension;
     pathToFile = /\..*$/.test(pathToFile) ? pathToFile : (pathToFile + '.js');
 
-    //if explicit set classPath to Class, just return it.
-    if(typeof KohanaJS.classPath.get(pathToFile) === 'function'){
+    //if explicit set classPath to Class or required object, just return it.
+    if(typeof KohanaJS.classPath.get(pathToFile) !== 'string'){
       return KohanaJS.classPath.get(pathToFile);
     }
 
