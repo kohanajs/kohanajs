@@ -103,6 +103,13 @@ class ORM extends Model{
   }
 
   /**
+   *
+   * @param {null | Set} properties
+   * @returns {Promise<void>}
+   */
+  async eagerLoad(properties = null){}
+
+  /**
    * get instance values which is not null
    * @returns {Map<any, any>}
    */
