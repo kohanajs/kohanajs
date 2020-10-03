@@ -104,10 +104,88 @@ class ORM extends Model{
 
   /**
    *
-   * @param {null | Set} properties
+   * @param {object} option
    * @returns {Promise<void>}
    */
-  async eagerLoad(properties = null){}
+  async eagerLoad(option = {}){
+    /*options format, eg product
+    * {
+    * with:['Product'], //1. only with Classes will be loaded, 2. pass null to skip all classses and 3. undefined will load all classes
+    * default_image:{}
+    * type:{}
+    * vendor:{}
+    * variants:{
+    *  children:true,
+    *  siblings:true,
+    *  inventories :{}
+    *  media: {}
+    * },
+    * media:{}
+    * tags:{}
+    * options:{}
+    * }
+    * */
+
+    const allowClasses = (option['with'] !== undefined) ? new Set(option['with']) : null;
+
+    const parents = [];
+    this.constructor.belongsTo.forEach((v, k)=>{
+      const name = k.replace('_id', '');
+      const opt = option[k];
+      if(!opt)return;
+      parents.push(async () => ({ "name" : name, "instance": await this.parent(k), "opt": opt}));
+    });
+
+    for(let i=0; i< parents.length; i++){
+      const x = await parents[i]();
+      this[x.name] = x.instance;
+      await x.instance.eagerLoad(x.opt)
+    }
+
+    const children = [];
+    this.constructor.hasMany.forEach( x =>{
+      const k = x[0];
+
+      if(allowClasses && !allowClasses.has(x[1]))return
+
+      const Model = ORM.require(x[1]);
+      const name = Model.tableName;
+      const opt = option[name];
+      if(!opt)return;
+      children.push(async () => ({ "name" : name, "instances": await this.children(k, Model), "opt": opt}));
+    });
+
+    for(let i=0; i< children.length; i++){
+      const x = await children[i]();
+      this[x.name] = x.instances;
+
+      for(let j=0 ; j< x.instances.length; j++){
+        const ins = x.instances[j];
+        await ins.eagerLoad(x.opt);
+      }
+    }
+
+    const siblings = [];
+    this.constructor.belongsToMany.forEach(x => {
+      if(allowClasses && !allowClasses.has(x))return;
+
+      const Model = ORM.require(x);
+      const name = Model.tableName;
+      const opt = option[name];
+      if (!opt) return;
+      siblings.push(async () => ({"name": name, "instances": await this.siblings(Model), "opt": opt}));
+    });
+
+    for (let i = 0; i < siblings.length; i++) {
+      const x = await siblings[i]();
+      this[x.name] = x.instances;
+
+      for(let j=0 ; j< x.instances.length; j++){
+        const ins = x.instances[j];
+        await ins.eagerLoad(x.opt);
+      }
+    }
+  }
 
   /**
    * get instance values which is not null
