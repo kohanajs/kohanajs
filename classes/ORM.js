@@ -142,7 +142,7 @@ class ORM extends Model{
       await x.instance.eagerLoad(x.opt)
     }
 
-    const children = [];
+    const props = [];
     this.constructor.hasMany.forEach( x =>{
       const k = x[0];
 
@@ -152,20 +152,9 @@ class ORM extends Model{
       const name = Model.tableName;
       const opt = option[name];
       if(!opt)return;
-      children.push(async () => ({ "name" : name, "instances": await this.children(k, Model), "opt": opt}));
+      props.push(async () => ({ "name" : name, "instances": await this.children(k, Model), "opt": opt}));
     });
 
-    for(let i=0; i< children.length; i++){
-      const x = await children[i]();
-      this[x.name] = x.instances;
-
-      for(let j=0 ; j< x.instances.length; j++){
-        const ins = x.instances[j];
-        await ins.eagerLoad(x.opt);
-      }
-    }
-
-    const siblings = [];
     this.constructor.belongsToMany.forEach(x => {
       if(allowClasses && !allowClasses.has(x))return;
 
@@ -173,11 +162,11 @@ class ORM extends Model{
       const name = Model.tableName;
       const opt = option[name];
       if (!opt) return;
-      siblings.push(async () => ({"name": name, "instances": await this.siblings(Model), "opt": opt}));
+      props.push(async () => ({"name": name, "instances": await this.siblings(Model), "opt": opt}));
     });
 
-    for (let i = 0; i < siblings.length; i++) {
-      const x = await siblings[i]();
+    for(let i=0; i< props.length; i++){
+      const x = await props[i]();
       this[x.name] = x.instances;
 
       for(let j=0 ; j< x.instances.length; j++){
