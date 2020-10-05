@@ -131,7 +131,8 @@ class ORM extends Model{
     const parents = [];
     this.constructor.belongsTo.forEach((v, k)=>{
       const name = k.replace('_id', '');
-      const opt = option[k];
+      const opt = option[name];
+
       if(!opt)return;
       parents.push(async () => ({ "name" : name, "instance": await this.parent(k), "opt": opt}));
     });
