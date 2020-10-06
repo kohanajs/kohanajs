@@ -139,6 +139,8 @@ class ORM extends Model{
 
     for(let i=0; i< parents.length; i++){
       const x = await parents[i]();
+      if(!x.instance)return; //parent can be null
+
       this[x.name] = x.instance;
       await x.instance.eagerLoad(x.opt)
     }
