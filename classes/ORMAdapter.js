@@ -129,24 +129,35 @@ class ORMAdapter{
    * @param {Map} kv
    * @returns {[]}
    * @param {boolean} readSingleResult
+   * @param {number} limit
+   * @param {number} offset
    * @returns {Promise<[]>}
    */
-  async readAll(kv, readSingleResult = false){}
+  async readAll(kv, readSingleResult = false, limit=1000, offset=0){}
   /**
    *
    * @param {string} key
    * @param {[]} values
    * @param {boolean} readSingleResult
+   * @param {number} limit
+   * @param {number} offset
    * @returns {Promise<[]>}
    */
-  async readBy(key, values, readSingleResult = false){}
+  async readBy(key, values, readSingleResult = false, limit=1000, offset=0){}
   /**
    *
    * @param {[[string]]}criteria
    * @param {boolean} readSingleResult
+   * @param {number} limit
+   * @param {number} offset
    * @returns {Promise<void>}
    */
-  async readWith(criteria, readSingleResult = false){}
+  async readWith(criteria, readSingleResult = false, limit=1000, offset=0){}
+
+  /**
+   * @returns {Promise<void>}
+   */
+  async count(){}
 
   /**
    *

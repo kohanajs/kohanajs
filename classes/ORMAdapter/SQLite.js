@@ -67,29 +67,34 @@ class ORMAdapterSQLite extends ORMAdapter{
     }
   }
 
-  async readAll(kv, readSingleResult = false){
+  async readAll(kv, readSingleResult = false, limit=1000, offset=0){
     if(!kv){
       return await this.readResult(readSingleResult,
-        `SELECT * FROM ${this.tableName}`,
+        `SELECT * FROM ${this.tableName}`+( !readSingleResult ? ` LIMIT ${limit} OFFSET ${offset}` :""),
         []
       );
     }
 
     return await this.readResult(readSingleResult,
-      `SELECT * FROM ${this.tableName} WHERE ${Array.from(kv.keys()).map( k => `${k} = ?`).join(' AND ')}`,
+      `SELECT * FROM ${this.tableName} WHERE ${Array.from(kv.keys()).map( k => `${k} = ?`).join(' AND ')}`+( !readSingleResult ? ` LIMIT ${limit} OFFSET ${offset}` :""),
       this.translateValue(Array.from(kv.values()))
     );
   }
 
-  async readBy(key, values, readSingleResult = false){
+  async readBy(key, values, readSingleResult = false, limit=1000, offset=0){
     return await this.readResult(readSingleResult,
-      `SELECT * FROM ${this.tableName} WHERE ${key} IN (${values.map(() => "?").join(", ")})`,
+      `SELECT * FROM ${this.tableName} WHERE ${key} IN (${values.map(() => "?").join(", ")})`+ ( !readSingleResult ? ` LIMIT ${limit} OFFSET ${offset}` :""),
       this.translateValue(values));
   }
 
-  async readWith(criteria, readSingleResult = false){
+  async readWith(criteria, readSingleResult = false, limit=1000, offset=0){
     const wheres = this.formatCriteria(criteria);
-    return await this.readResult(readSingleResult, `SELECT * FROM ${this.tableName} WHERE ${wheres.join('')}`, []);
+    return await this.readResult(readSingleResult, `SELECT * FROM ${this.tableName} WHERE ${wheres.join('')}` + ( !readSingleResult ? ` LIMIT ${limit} OFFSET ${offset}` :""), []);
+  }
+
+  async count(){
+    const result = this.database.prepare(`SELECT COUNT(id) FROM ${this.tableName}`).get()
+    return result['COUNT(id)'];
   }
 
   async deleteAll(kv){
