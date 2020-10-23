@@ -46,18 +46,18 @@ class ORM extends Model{
   created_at = null;
   updated_at = null;
 
+  #generateMissingTableName(){
+    if(this.constructor === ORM || this.constructor.tableName || this.constructor.joinTablePrefix)return;
+    this.constructor.tableName = pluralize(this.constructor.name).toLowerCase();
+    this.constructor.joinTablePrefix = pluralize.singular(this.constructor.tableName);
+   }
+
   constructor(id = null, options = {}){
     super();
     //auto generate table name
-    if(this.constructor !== ORM){
-      if(!this.constructor.tableName){
-        this.constructor.tableName = pluralize(this.constructor.name).toLowerCase();
-      }
-      if(!this.constructor.joinTablePrefix){
-        this.constructor.joinTablePrefix = pluralize.singular(this.constructor.tableName);
-      }
-    }
+    this.#generateMissingTableName();
 
+    //ORM may use
     //private property this.database.
     Object.defineProperty(this, "database", {
       enumerable : false,
@@ -77,7 +77,7 @@ class ORM extends Model{
     });
 
     const Adapter = options.adapter || this.constructor.defaultAdapter;
-    const adapter = new Adapter(this, this.database);
+    const adapter = new Adapter(this, this["database"]);
 
     //private property adapter
     Object.defineProperty(this, "adapter", {
