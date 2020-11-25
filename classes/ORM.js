@@ -33,6 +33,7 @@ class ORM extends Model{
   static database = null;
 
   static tableName = null;
+  //associative (junction) table name prefix
   static joinTablePrefix = null;
   static fields = new Map();
   static belongsTo = new Map();
