@@ -395,7 +395,7 @@ class ORM extends Model{
   static async readAll (Model, kv = null, options={}){
     const opt = Object.assign({database: this.database}, options);
     const m = ORM.create(Model, opt);
-    const result = await m.adapter.readAll(kv, options.readSingleResult === true, options.limit, options.offset);
+    const result = await m.adapter.readAll(kv, options.readSingleResult === true, options.limit, options.offset, options.orderBy);
 
     if(options.asArray)return result.map(x => Object.assign( ORM.create(Model, options), x));
     if(result.length === 0)return null;
@@ -413,7 +413,7 @@ class ORM extends Model{
   static async readBy (Model, key, values, options={}) {
     const opt = Object.assign({database: this.database}, options);
     const m = ORM.create(Model, opt);
-    const result = await m.adapter.readBy(key, values, options.readSingleResult === true, options.limit, options.offset);
+    const result = await m.adapter.readBy(key, values, options.readSingleResult === true, options.limit, options.offset, options.orderBy);
 
     if(options.asArray)return result.map(x => Object.assign( ORM.create(Model, options), x));
     if(result.length === 0)return null;
@@ -432,7 +432,7 @@ class ORM extends Model{
     if(criteria.length === 0)return [];
     const opt = Object.assign({database: this.database}, options);
     const m = ORM.create(Model, opt);
-    const result = await m.adapter.readWith(criteria, options.readSingleResult === true, options.limit, options.offset);
+    const result = await m.adapter.readWith(criteria, options.readSingleResult === true, options.limit, options.offset, options.orderBy);
 
     if(options.asArray)return result.map(x => Object.assign( ORM.create(Model, options), x));
     if(result.length === 0)return null;

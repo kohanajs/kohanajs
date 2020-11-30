@@ -67,29 +67,37 @@ class ORMAdapterSQLite extends ORMAdapter{
     }
   }
 
-  async readAll(kv, readSingleResult = false, limit=1000, offset=0){
+  getOrderByStatement(orderBy){
+    return ' ORDER BY ' + Array.from(orderBy).map(kv => `${kv[0]} ${kv[1]}`).join(',');
+  }
+
+  async readAll(kv, readSingleResult = false, limit=1000, offset=0, orderBy= new Map([['id', 'ASC']])){
+    let statementOrderBy = this.getOrderByStatement(orderBy);
+
     if(!kv){
       return await this.readResult(readSingleResult,
-        `SELECT * FROM ${this.tableName}`+( !readSingleResult ? ` LIMIT ${limit} OFFSET ${offset}` :""),
+        `SELECT * FROM ${this.tableName}`+ statementOrderBy + ( !readSingleResult ? ` LIMIT ${limit} OFFSET ${offset}` : ` LIMIT 1 OFFSET ${offset}`),
         []
       );
     }
 
     return await this.readResult(readSingleResult,
-      `SELECT * FROM ${this.tableName} WHERE ${Array.from(kv.keys()).map( k => `${k} = ?`).join(' AND ')}`+( !readSingleResult ? ` LIMIT ${limit} OFFSET ${offset}` :""),
+      `SELECT * FROM ${this.tableName} WHERE ${Array.from(kv.keys()).map( k => `${k} = ?`).join(' AND ')}`+ statementOrderBy +( !readSingleResult ? ` LIMIT ${limit} OFFSET ${offset}` : ` LIMIT 1 OFFSET ${offset}`),
       this.translateValue(Array.from(kv.values()))
     );
   }
 
-  async readBy(key, values, readSingleResult = false, limit=1000, offset=0){
+  async readBy(key, values, readSingleResult = false, limit=1000, offset=0, orderBy= new Map([['id', 'ASC']])){
+    let statementOrderBy = this.getOrderByStatement(orderBy);
     return await this.readResult(readSingleResult,
-      `SELECT * FROM ${this.tableName} WHERE ${key} IN (${values.map(() => "?").join(", ")})`+ ( !readSingleResult ? ` LIMIT ${limit} OFFSET ${offset}` :""),
+      `SELECT * FROM ${this.tableName} WHERE ${key} IN (${values.map(() => "?").join(", ")})`+ statementOrderBy + ( !readSingleResult ? ` LIMIT ${limit} OFFSET ${offset}` : ` LIMIT 1 OFFSET ${offset}`),
       this.translateValue(values));
   }
 
-  async readWith(criteria, readSingleResult = false, limit=1000, offset=0){
+  async readWith(criteria, readSingleResult = false, limit=1000, offset=0, orderBy= new Map([['id', 'ASC']])){
+    let statementOrderBy = this.getOrderByStatement(orderBy);
     const wheres = this.formatCriteria(criteria);
-    return await this.readResult(readSingleResult, `SELECT * FROM ${this.tableName} WHERE ${wheres.join('')}` + ( !readSingleResult ? ` LIMIT ${limit} OFFSET ${offset}` :""), []);
+    return await this.readResult(readSingleResult, `SELECT * FROM ${this.tableName} WHERE ${wheres.join('')}` + statementOrderBy + ( !readSingleResult ? ` LIMIT ${limit} OFFSET ${offset}` : ` LIMIT 1 OFFSET ${offset}`), []);
   }
 
   async count(){

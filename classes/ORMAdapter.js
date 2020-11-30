@@ -131,9 +131,10 @@ class ORMAdapter{
    * @param {boolean} readSingleResult
    * @param {number} limit
    * @param {number} offset
+   * @param {Map} orderBy
    * @returns {Promise<[]>}
    */
-  async readAll(kv, readSingleResult = false, limit=1000, offset=0){}
+  async readAll(kv, readSingleResult = false, limit=1000, offset=0, orderBy= new Map([['id', 'ASC']])){}
   /**
    *
    * @param {string} key
@@ -141,18 +142,20 @@ class ORMAdapter{
    * @param {boolean} readSingleResult
    * @param {number} limit
    * @param {number} offset
+   * @param {Map} orderBy
    * @returns {Promise<[]>}
    */
-  async readBy(key, values, readSingleResult = false, limit=1000, offset=0){}
+  async readBy(key, values, readSingleResult = false, limit=1000, offset=0, orderBy= new Map([['id', 'ASC']])){}
   /**
    *
    * @param {[[string]]}criteria
    * @param {boolean} readSingleResult
    * @param {number} limit
    * @param {number} offset
+   * @param {Map} orderBy
    * @returns {Promise<void>}
    */
-  async readWith(criteria, readSingleResult = false, limit=1000, offset=0){}
+  async readWith(criteria, readSingleResult = false, limit=1000, offset=0, orderBy= new Map([['id', 'ASC']])){}
 
   /**
    * @returns {Promise<void>}
