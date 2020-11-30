@@ -15,6 +15,7 @@ class ControllerMixinView extends ControllerMixin{
     this.exports = {
       getView          : (file, data= {}) => this.getView(file, data, themePath, viewClass),
       setTemplate      : (file, data= {}) => (this.template      = (typeof file === 'string') ? this.getView(file, data, themePath, viewClass) : file),
+      setLayout        : (file, data= {}) => (this.layout        = (typeof file === 'string') ? this.getView(file, data, themePath, viewClass) : file),
       setErrorTemplate : (file, data= {}) => (this.errorTemplate = (typeof file === 'string') ? this.getView(file, data, themePath, viewClass) : file),
       template         : () => this.template,
       errorTemplate    : () => this.errorTemplate,
