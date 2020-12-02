@@ -333,6 +333,9 @@ class ORM extends Model{
    */
   async add(model, weight = 0){
     if(!this.id)throw new Error(`Cannot add ${model.constructor.name}. ${this.constructor.name} not have id`);
+    //check model is not empty
+    if(!model)throw new Error(`Error add model, model cannot be null or undefined`);
+    if(Array.isArray(model) && model.length <= 0)throw new Error(`Error add model, model array cannot be empty`);
 
     const {joinTableName, lk, fk} = this.#siblingInfo(model);
     await this.adapter.add(Array.isArray(model) ? model : [model], weight, joinTableName, lk, fk);
