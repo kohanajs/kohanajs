@@ -391,14 +391,13 @@ class ORM extends Model{
   /**
    * read all records from the model
    * @param {Function<ORM>} Model
-   * @param {Map} kv
    * @param {object} options
    * @returns {Promise<[]|object>}
    */
-  static async readAll (Model, kv = null, options={}){
+  static async readAll (Model, options={}){
     const opt = Object.assign({database: this.database}, options);
     const m = ORM.create(Model, opt);
-    const result = await m.adapter.readAll(kv, options.readSingleResult === true, options.limit, options.offset, options.orderBy);
+    const result = await m.adapter.readAll(opt.kv, opt.readSingleResult === true, opt.limit, opt.offset, opt.orderBy);
 
     if(options.asArray)return result.map(x => Object.assign( ORM.create(Model, options), x));
     if(result.length === 0)return null;
@@ -445,12 +444,12 @@ class ORM extends Model{
 
   static async count (Model, options={}){
     const m = ORM.create(Model, Object.assign({database: this.database}, options));
-    return await m.adapter.count();
+    return await m.adapter.count(options.kv);
   }
 
-  static async deleteAll(Model, kv=null, options={}){
+  static async deleteAll(Model, options={}){
     const m = ORM.create(Model, Object.assign({database: this.database}, options));
-    await m.adapter.deleteAll(kv);
+    await m.adapter.deleteAll(options.kv);
   }
 
   /**
@@ -532,6 +531,7 @@ class ORM extends Model{
   static async insertAll(Model, columns, values, options={}){
     //verify columns
     columns.forEach(x => {
+      if(x === 'id')return;
       if(!Model.fields.has(x))throw new Error(`${Model.name} insert invalid columns ${x}`);
     })
 

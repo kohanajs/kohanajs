@@ -48,7 +48,7 @@ INSERT INTO persons (id, enable, name, email) VALUES (6, 0, 'Frank', 'frank@exam
     const result = await ORM.readAll(Person);
     expect(result.length).toBe(6);
 
-    const r2 = await ORM.readAll(Person, new Map([['enable', false]]))
+    const r2 = await ORM.readAll(Person, {kv: new Map([['enable', false]])})
     expect(r2.length).toBe(3);
   })
 
@@ -133,7 +133,7 @@ INSERT INTO persons (id, enable, name, email) VALUES (6, 0, 'Frank', 'frank@exam
 
   test('delete all', async ()=>{
     //prepare data
-    await ORM.deleteAll(Person, new Map([['enable', true]]));
+    await ORM.deleteAll(Person, {kv: new Map([['enable', true]])});
 
     const result = db.prepare(`SELECT * FROM persons`).all();
     expect(result.length).toBe(3);
@@ -238,16 +238,16 @@ INSERT INTO persons (id, enable, name, email) VALUES (6, 0, 'Frank', 'frank@exam
   });
 
   test('insert all', async ()=>{
-
-    await ORM.insertAll(Person, ['enable', 'name', 'email'], [
-      [true, 'George', 'george@example.com'],
-      [true, 'Hong', 'hong@example.com'],
-      [true, 'Ivy', 'ivy@example.com'],
-      [false, 'Joanna', 'joanna@example.com'],
-      [true, 'Ken', 'ken@example.com'],
+    await ORM.insertAll(Person, ['id', 'enable', 'name', 'email'], [
+      [7, true, 'George', 'george@example.com'],
+      [8, true, 'Hong', 'hong@example.com'],
+      [9, true, 'Ivy', 'ivy@example.com'],
+      [10, false, 'Joanna', 'joanna@example.com'],
+      [11, true, 'Ken', 'ken@example.com'],
     ], {database: db});
 
     const r = await ORM.readAll(Person);
+    console.log(r);
 
     expect(r[6].name).toBe('George')
     expect(r[7].name).toBe('Hong')

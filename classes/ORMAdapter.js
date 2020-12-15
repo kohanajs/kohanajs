@@ -158,9 +158,10 @@ class ORMAdapter{
   async readWith(criteria, readSingleResult = false, limit=1000, offset=0, orderBy= new Map([['id', 'ASC']])){}
 
   /**
+   * @param {Map} kv
    * @returns {Promise<void>}
    */
-  async count(){}
+  async count(kv){}
 
   /**
    *

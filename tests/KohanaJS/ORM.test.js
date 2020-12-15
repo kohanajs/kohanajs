@@ -261,20 +261,20 @@ describe('orm test', ()=>{
         ORM.database = db;
 
         const Tag = KohanaJS.require('model/Tag');
-        const tags = await ORM.readAll(Tag, null, {database: db});
+        const tags = await ORM.readAll(Tag, {database: db});
 
         expect(tags[0].name).toBe('foo');
         expect(tags[1].name).toBe('tar');
 
-        const tags2 = await ORM.readAll(Tag, null);
+        const tags2 = await ORM.readAll(Tag);
         expect(tags2[0].name).toBe('foo');
         expect(tags2[1].name).toBe('tar');
 
-        const tags3 = await ORM.readAll(Tag, null, {readSingleResult : true});
+        const tags3 = await ORM.readAll(Tag, {readSingleResult : true});
         expect(typeof tags3).not.toBe('array');
         expect(tags3.name).toBe('foo');
 
-        const tags4 = await ORM.readAll(Tag, new Map([['name', 'not exist']]), {readSingleResult : true});
+        const tags4 = await ORM.readAll(Tag, {kv: new Map([['name', 'not exist']]), readSingleResult : true});
         expect(tags4).toBe(null);
 
         const tags5 = await ORM.readBy(Tag, 'name', ['foo', 'bar', 'tar']);

@@ -10,6 +10,7 @@ class ORMAdapterSQLite extends ORMAdapter{
   translateValue(values){
     return values.map(x =>{
       if(typeof x === 'boolean')return x ? 1 : 0;
+      if(typeof x === 'object')return JSON.stringify(x);
       return x;
     })
   }
@@ -100,8 +101,9 @@ class ORMAdapterSQLite extends ORMAdapter{
     return await this.readResult(readSingleResult, `SELECT * FROM ${this.tableName} WHERE ${wheres.join('')}` + statementOrderBy + ( !readSingleResult ? ` LIMIT ${limit} OFFSET ${offset}` : ` LIMIT 1 OFFSET ${offset}`), []);
   }
 
-  async count(){
-    const result = this.database.prepare(`SELECT COUNT(id) FROM ${this.tableName}`).get()
+  async count(kv){
+    const where = kv ? ' WHERE '+ Array.from(kv.keys()).map( k => `${k} = ?`).join(' AND ') : '';
+    const result = this.database.prepare(`SELECT COUNT(id) FROM ${this.tableName}${where}`).get()
     return result['COUNT(id)'];
   }
 
