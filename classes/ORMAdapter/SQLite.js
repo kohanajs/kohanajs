@@ -101,13 +101,14 @@ class ORMAdapterSQLite extends ORMAdapter{
     return await this.readResult(readSingleResult, `SELECT * FROM ${this.tableName} WHERE ${wheres.join('')}` + statementOrderBy + ( !readSingleResult ? ` LIMIT ${limit} OFFSET ${offset}` : ` LIMIT 1 OFFSET ${offset}`), []);
   }
 
-  async count(kv){
+  async count(kv= null){
     const where = kv ? ' WHERE '+ Array.from(kv.keys()).map( k => `${k} = ?`).join(' AND ') : '';
-    const result = this.database.prepare(`SELECT COUNT(id) FROM ${this.tableName}${where}`).get()
+    const v = kv ? this.translateValue(Array.from(kv.values())) : [];
+    const result = this.database.prepare(`SELECT COUNT(id) FROM ${this.tableName}${where}`).get(...v);
     return result['COUNT(id)'];
   }
 
-  async deleteAll(kv){
+  async deleteAll(kv= null){
     if(!kv)return this.database.prepare(`DELETE FROM ${this.tableName}`).run();
     const v = this.translateValue(Array.from(kv.values()));
     return this.database.prepare(`DELETE FROM ${this.tableName} WHERE ${Array.from(kv.keys()).map( k => `${k} = ?`).join(' AND ')}`).run(...v);
