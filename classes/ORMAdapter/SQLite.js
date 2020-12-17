@@ -9,8 +9,10 @@ class ORMAdapterSQLite extends ORMAdapter{
 
   translateValue(values){
     return values.map(x =>{
+      if(x === null)return null;
       if(typeof x === 'boolean')return x ? 1 : 0;
       if(typeof x === 'object')return JSON.stringify(x);
+      if(typeof x === 'function')return JSON.stringify(x);
       return x;
     })
   }
