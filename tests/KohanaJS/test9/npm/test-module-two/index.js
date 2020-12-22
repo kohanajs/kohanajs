@@ -1,1 +1,2 @@
-require('../../../../../index').addNodeModule(__dirname);
+const KohanaJS = require('../../../../../KohanaJS');
+KohanaJS.addNodeModule(__dirname);

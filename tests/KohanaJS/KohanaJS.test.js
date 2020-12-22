@@ -285,7 +285,7 @@ describe('KohanaJS test', ()=>{
   })
 
   test('dereference', ()=>{
-    const {dereference:$} = require('../../index');
+    const {dereference:$} = kohanaJS;
     const a = {foo: 'bar', kaa: 'laa'};
 
     class C {

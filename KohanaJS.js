@@ -31,7 +31,7 @@ const path = require('path');
 class KohanaJS{
   static #configs = new Set();
 
-  static VERSION  = '1.0.0';
+  static VERSION  = '2.0.0';
   static SYS_PATH = __dirname;
   static EXE_PATH = KohanaJS.SYS_PATH;
   static APP_PATH = KohanaJS.SYS_PATH;
@@ -110,6 +110,10 @@ class KohanaJS{
 
     const file = KohanaJS.#resolve(pathToFile, 'classes', KohanaJS.classPath);
     return require(file);
+  }
+
+  static dereference(ref){
+    return (typeof ref === 'function')? ref() : ref
   }
 
   static resolveView(pathToFile){
@@ -231,7 +235,7 @@ class KohanaJS{
       });
     }
 
-    //activate init.js in require('KOJSmvc-sample-module')
+    //activate init.js in require('kohanajs-sample-module')
     KohanaJS.nodePackages.forEach(x =>{
       const initPath = `${x}/init.js`;
       const filePath = path.normalize(initPath);

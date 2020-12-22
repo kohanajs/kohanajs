@@ -41,7 +41,7 @@ class ORM extends Model{
   static hasMany = [];
   static belongsToMany = new Set();
 
-  static defaultAdapter = require('./ORMAdapter/SQLite');
+  static defaultAdapter = require('./ORMAdapter');
   static classPrefix = 'model/';
 
   created_at = null;
@@ -397,7 +397,7 @@ class ORM extends Model{
   static async readAll (Model, options={}){
     const opt = Object.assign({database: this.database}, options);
     const m = ORM.create(Model, opt);
-    const result = await m.adapter.readAll(opt.kv, opt.readSingleResult === true, opt.limit, opt.offset, opt.orderBy);
+    const result = await m.adapter.readAll(opt.kv, opt.limit, opt.offset, opt.orderBy);
 
     if(options.asArray)return result.map(x => Object.assign( ORM.create(Model, options), x));
     if(result.length === 0)return null;
@@ -415,7 +415,7 @@ class ORM extends Model{
   static async readBy (Model, key, values, options={}) {
     const opt = Object.assign({database: this.database}, options);
     const m = ORM.create(Model, opt);
-    const result = await m.adapter.readBy(key, values, options.readSingleResult === true, options.limit, options.offset, options.orderBy);
+    const result = await m.adapter.readBy(key, values, options.limit, options.offset, options.orderBy);
 
     if(options.asArray)return result.map(x => Object.assign( ORM.create(Model, options), x));
     if(result.length === 0)return null;
@@ -434,7 +434,7 @@ class ORM extends Model{
     if(criteria.length === 0)return [];
     const opt = Object.assign({database: this.database}, options);
     const m = ORM.create(Model, opt);
-    const result = await m.adapter.readWith(criteria, options.readSingleResult === true, options.limit, options.offset, options.orderBy);
+    const result = await m.adapter.readWith(criteria, options.limit, options.offset, options.orderBy);
 
     if(options.asArray)return result.map(x => Object.assign( ORM.create(Model, options), x));
     if(result.length === 0)return null;
