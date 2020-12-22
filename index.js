@@ -39,7 +39,8 @@ module.exports = {
   KohanaJS : KohanaJS,
   init : KohanaJS.init,
 
+  ControllerMixinDatabase : require('./classes/controller-mixin/Database'),
   ControllerMixinMime : require('./classes/controller-mixin/Mime'),
-  ControllerMixinView : require('./classes/controller-mixin/View'),
   ControllerMixinMultipartForm : require('./classes/controller-mixin/MultipartForm'),
+  ControllerMixinView : require('./classes/controller-mixin/View'),
 };
