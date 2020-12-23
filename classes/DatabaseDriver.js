@@ -17,7 +17,7 @@ class DatabaseDriver{
    * @param {string} datasource
    * @returns {function | Object | DatabaseDriver}
    */
-  static async create(datasource){
+  static create(datasource){
     return new DatabaseDriver(datasource);
   }
 }

@@ -1,5 +1,6 @@
+const KohanaJS = require('../../KohanaJS');
 const {ControllerMixin} = require("@kohanajs/core-mvc");
-const {DatabaseDriver, KohanaJS} = require('kohanajs');
+const DatabaseDriver = require('../DatabaseDriver');
 const crypto = require('crypto');
 
 class ControllerMixinDatabase extends ControllerMixin{
