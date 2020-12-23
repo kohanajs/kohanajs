@@ -1,16 +1,16 @@
 class DatabaseStatement{
   constructor(sql) {}
   async run(arg){}
-  async get(arg){}
-  async all(arg){}
+  async get(arg){return {}}
+  async all(arg){return []}
 }
 
 class DatabaseDriver{
   constructor(datasource) {}
   prepare(sql){return new DatabaseStatement(sql)}
-  transaction(fn){}
-  exec(sql){}
-  close(){}
+  async transaction(fn){}
+  async exec(sql){}
+  async close(){}
 
   /**
    *
@@ -22,5 +22,4 @@ class DatabaseDriver{
   }
 }
 
-DatabaseDriver.defaultDriver = DatabaseDriver;
 module.exports = DatabaseDriver;

@@ -3,6 +3,7 @@ const {ControllerMixin} = require("@kohanajs/core-mvc");
 const qs = require('qs');
 const fs = require('fs');
 const {v1: uuid} = require('uuid');
+const path = require('path');
 
 class HelperForm{
   static parseMultipartForm(request, $_POST, tempFolder){
@@ -56,7 +57,7 @@ class HelperForm{
 class MultipartForm extends ControllerMixin{
   constructor(client, tempFolder) {
     super(client);
-    this.tempFolder = tempFolder;
+    this.tempFolder = path.normalize(tempFolder);
 
     this.exports = {
       '$_GET'     : this.request.query,
