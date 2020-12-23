@@ -31,4 +31,3 @@ Person.belongsToMany = [
 
 
 module.exports = Person;
-``

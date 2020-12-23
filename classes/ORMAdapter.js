@@ -34,25 +34,6 @@ class ORMAdapter{
     return ( ( (Date.now() - 1563741060000) / 1000 ) | 0 ) * 100000 + ((Math.random() * 100000) & 65535);
   }
 
-  op(operator){
-    if(operator === '')return '';
-    const OP = this.constructor.OP[operator];
-    if(OP === undefined){
-      return (typeof operator === 'string') ? `'${operator}'`: operator;
-    }
-
-    return OP;
-  }
-
-  formatCriteria(criteria){
-    if(!Array.isArray(criteria[0]))throw new Error('criteria must group by array.');
-    return criteria.map(
-      (x, i) => {
-        return `${(i===0) ? '' : this.op(x[0] || '')} ${x[1] || ''} ${this.op(x[2] || '')} ${this.op(x[3] || '')} `
-      }
-    );
-  }
-
   processValues(){
     return this.translateValue(this.client.columns.map(x => this.client[x]));
   }
@@ -133,7 +114,9 @@ class ORMAdapter{
    * @param {Map} orderBy
    * @returns {Promise<[]>}
    */
-  async readAll(kv, limit=1000, offset=0, orderBy= new Map([['id', 'ASC']])){}
+  async readAll(kv, limit=1000, offset=0, orderBy= new Map([['id', 'ASC']])){
+    return [];
+  }
   /**
    *
    * @param {string} key
@@ -143,27 +126,33 @@ class ORMAdapter{
    * @param {Map} orderBy
    * @returns {Promise<[]>}
    */
-  async readBy(key, values, limit=1000, offset=0, orderBy= new Map([['id', 'ASC']])){}
+  async readBy(key, values, limit=1000, offset=0, orderBy= new Map([['id', 'ASC']])){
+    return [];
+  }
   /**
    *
    * @param {[[string]]}criteria
    * @param {number} limit
    * @param {number} offset
    * @param {Map} orderBy
-   * @returns {Promise<void>}
+   * @returns {Promise<[]>}
    */
-  async readWith(criteria, limit=1000, offset=0, orderBy= new Map([['id', 'ASC']])){}
+  async readWith(criteria, limit=1000, offset=0, orderBy= new Map([['id', 'ASC']])){
+    return [];
+  }
 
   /**
    * @param {Map|null} kv
-   * @returns {Promise<void>}
+   * @returns {Promise<number>}
    */
-  async count(kv = null){}
+  async count(kv = null){
+    return 0;
+  }
 
   /**
    *
    * @param {Map|null} kv
-   * @returns {Promise<[]>}
+   * @returns {Promise<void>}
    */
   async deleteAll(kv = null){}
   /**
@@ -184,6 +173,7 @@ class ORMAdapter{
    *
    * @param {Map} kv
    * @param {Map} columnValues
+   * @returns {Promise<void>}
    */
   async updateAll(kv, columnValues){}
   /**

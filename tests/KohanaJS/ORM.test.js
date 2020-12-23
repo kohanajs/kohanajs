@@ -66,9 +66,9 @@ describe('orm test', ()=>{
         const peter = await new Person(1).read();
         expect(peter.id).toBe(1);
 
-        const home = await new Address(100).read();
+        const home = await new Address(20).read();
         home.person_id = 1;
-        expect(home.id).toBe(100);
+        expect(home.id).toBe(20);
 
         const owner = await home.parent('person_id');
         expect(owner.id).toBe(1);
@@ -219,8 +219,6 @@ describe('orm test', ()=>{
     await a.insertAll([],[],[]);
 
     a.defaultID();
-    a.op('');
-    a.formatCriteria([[]]);
     a.processValues();
     a.translateValue([]);
     expect(true).toBe(true);
@@ -265,5 +263,139 @@ describe('orm test', ()=>{
 
     expect(p.states[0].name).toBe('Alice');
     expect(p.states[1].name).toBe('Bob');
+  });
+
+  test('ORM Eager Load', async ()=>{
+    KohanaJS.init(__dirname+'/orm');
+    const Address = ORM.require('Address');
+
+    const a = await ORM.factory(Address, 11);
+    expect(a.person).toBe(undefined);
+    await a.eagerLoad({
+      with: ['Person'],
+      person:{
+        with:['Address'],
+        addresses: {
+          with: null
+        }
+      }
+    });
+
+    expect(a.person.id).toBe(2);
+
+    const Product = ORM.require('Product');
+    const p = await ORM.factory(Product, 22);
+    expect(p.tags).toBe(undefined);
+
+    await p.eagerLoad({
+      with: ['Tag'],
+      tags: {with: null}
+    })
+
+    expect(p.tags.length).toBe(2);
+
   })
+
+  test('no record on read', async ()=>{
+    const Product = ORM.require('Product');
+    try{
+      await ORM.factory(Product, 200);
+      expect('this line not run').toBe('');
+    }catch (e){
+      expect(e.message).toBe('Record not found. Product id:200');
+    }
+  })
+
+  test('read By Value', async ()=>{
+      const Product = ORM.require('Product');
+      const p = ORM.create(Product);
+      p.name = 'Foo';
+      await p.read();
+
+      expect(p.id).toBe(88);
+  })
+
+  test('parent is undefined', async ()=>{
+    const Address = ORM.require('Address');
+    const a = ORM.create(Address);
+    try{
+      await a.parent('tag_id');
+      expect('this line should not run').toBe('')
+    }catch(e){
+      expect(e.message).toBe('tag_id is not foreign key in Address');
+    }
+
+  });
+
+  test('not have many to many relationship', async ()=>{
+    const Product = ORM.require('Product');
+    const Tag = ORM.require('Tag');
+    const Person = ORM.require('Person');
+    const p = ORM.create(Product);
+    await p.siblings(Tag);
+
+    const t = ORM.create(Tag);
+    await t.siblings(Product);
+
+    try{
+      await t.siblings(Person);
+      expect('not run').toBe('');
+    }catch(e){
+      expect(e.message).toBe('Tag and Person not have many to many relationship')
+    }
+  });
+
+  test('remove all siblings', async ()=>{
+    const Product = ORM.require('Product');
+    const Tag = ORM.require('Tag');
+    const p = ORM.create(Product);
+
+    try{
+      await p.removeAll(Tag);
+      expect('not run').toBe('');
+    }catch(e){
+      expect(e.message).toBe('Cannot remove Tag. Product not have id');
+    }
+
+    p.id = 1;
+    await p.removeAll(Tag);
+
+  });
+
+  test('static methods', async ()=>{
+    const Product = ORM.require('Product');
+    const noResult = await ORM.readAll(Product);
+    expect(noResult).toStrictEqual(null);
+
+    const result = await ORM.readAll(Product, {kv: new Map([['name', 'one']])})
+    expect(result.id).toBe(55);
+
+    const results = await ORM.readAll(Product, {kv: new Map([['name', 'test']])})
+    expect(results.length).toBe(3);
+
+    const r4 = await ORM.readBy(Product, 'name', ['empty']);
+    expect(r4).toStrictEqual(null);
+
+    const r5 = await ORM.readBy(Product, 'name', ['test']);
+    expect(r5.length).toBe(2);
+
+    const r6 = await ORM.readWith(Product, [['', 'price', 'EQUAL', '1'], ['AND', 'name', 'EQUAL', 'peter']]);
+    expect(r6).toStrictEqual(null);
+
+    const r7 = await ORM.readWith(Product, [['', 'price', 'EQUAL', '100'], ['AND', 'name', 'EQUAL', 'peter']]);
+    expect(r7.length).toBe(2);
+
+    const c = await ORM.count(Product);
+    expect(c).toBe(0);
+
+    await ORM.deleteAll(Product);
+    await ORM.deleteBy(Product, 'name', ['test']);
+    await ORM.deleteWith(Product, [['', 'price', 'EQUAL', '100'], ['AND', 'name', 'EQUAL', 'peter']]);
+    await ORM.updateAll(Product, new Map([['name', ['test', 'one']]]), new Map([['price', 100]]));
+    await ORM.updateBy(Product, "name", ["test", "one"],  new Map([['price', 100]]));
+    await ORM.updateWith(Product, [['', 'price', 'EQUAL', '1'], ['AND', 'name', 'EQUAL', 'peter']], new Map([['price', 100]]));
+
+    await ORM.insertAll(Product, ['name', 'available'], [['foo', true], ['bar', true], ['tar', false]]);
+  });
+
 });

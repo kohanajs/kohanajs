@@ -234,7 +234,7 @@ class ORM extends Model{
   async #readByValues(){
     const values = this.#getValues();
     if(values.size === 0)throw new Error(`${this.constructor.name}: No id and no value to read`)
-    const results = await this.adapter.readAll(values);
+    const results = await this.adapter.readAll(values, 1);
     return results[0];
   }
 
@@ -318,7 +318,6 @@ class ORM extends Model{
    * @return {[]}
    */
   async siblings(Model){
-    if(!this.constructor.belongsToMany.has(Model.name))throw new Error(`${this.constructor.name} not have sibling type ${Model.name}`);
     const {joinTableName, lk, fk} = this.#siblingInfo(ORM.create(Model));
 
     const results = await this.adapter.belongsToMany(Model.tableName, joinTableName, lk, fk);
@@ -397,12 +396,12 @@ class ORM extends Model{
   static async readAll (Model, options={}){
     const opt = Object.assign({database: this.database}, options);
     const m = ORM.create(Model, opt);
-    const result = await m.adapter.readAll(opt.kv, opt.limit, opt.offset, opt.orderBy);
+    const result = await m.adapter.readAll(opt.kv, opt.limit, opt.offset, opt.orderBy) || [];
 
-    if(options.asArray)return result.map(x => Object.assign( ORM.create(Model, options), x));
+    if(opt.asArray)return result.map(x => Object.assign( ORM.create(Model, opt), x));
     if(result.length === 0)return null;
     if(result.length === 1)return Object.assign(m, result[0]);
-    return result.map(x => Object.assign( ORM.create(Model, options), x));
+    return result.map(x => Object.assign( ORM.create(Model, opt), x));
   }
   /**
    *
@@ -415,12 +414,12 @@ class ORM extends Model{
   static async readBy (Model, key, values, options={}) {
     const opt = Object.assign({database: this.database}, options);
     const m = ORM.create(Model, opt);
-    const result = await m.adapter.readBy(key, values, options.limit, options.offset, options.orderBy);
+    const result = await m.adapter.readBy(key, values, opt.limit, opt.offset, opt.orderBy);
 
-    if(options.asArray)return result.map(x => Object.assign( ORM.create(Model, options), x));
+    if(opt.asArray)return result.map(x => Object.assign( ORM.create(Model, opt), x));
     if(result.length === 0)return null;
     if(result.length === 1)return Object.assign(m, result[0]);
-    return result.map(x => Object.assign( ORM.create(Model, options), x));
+    return result.map(x => Object.assign( ORM.create(Model, opt), x));
   }
 
   /**
@@ -434,12 +433,12 @@ class ORM extends Model{
     if(criteria.length === 0)return [];
     const opt = Object.assign({database: this.database}, options);
     const m = ORM.create(Model, opt);
-    const result = await m.adapter.readWith(criteria, options.limit, options.offset, options.orderBy);
+    const result = await m.adapter.readWith(criteria, opt.limit, opt.offset, opt.orderBy);
 
-    if(options.asArray)return result.map(x => Object.assign( ORM.create(Model, options), x));
+    if(opt.asArray)return result.map(x => Object.assign( ORM.create(Model, opt), x));
     if(result.length === 0)return null;
     if(result.length === 1)return Object.assign(m, result[0]);
-    return result.map(x => Object.assign( ORM.create(Model, options), x));
+    return result.map(x => Object.assign( ORM.create(Model, opt), x));
   }
 
   static async count (Model, options={}){

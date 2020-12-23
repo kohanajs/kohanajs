@@ -309,4 +309,12 @@ describe('KohanaJS test', ()=>{
     expect(ca.greeting()).toBe('hello bar');
     expect(cb.greeting()).toBe('hello shaa');
   })
+
+  test('explict set class to KohanaJS.require', async ()=>{
+    const C = class Collection{}
+    kohanaJS.classPath.set('model/Collection.js', C);
+    const C2 = kohanaJS.require('model/Collection')
+
+    expect(C === C2).toBe(true);
+  })
 });
