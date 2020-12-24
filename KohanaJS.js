@@ -48,7 +48,7 @@ class KohanaJS{
   static bootstrap = {modules: [], system: []};
 
   static init(EXE_PATH = null, APP_PATH = null, MOD_PATH = null, SYM_PATH = null, VIEW_PATH= null) {
-    KohanaJS.#configs   = new Set(['classes', 'view']);
+    KohanaJS.#configs   = new Set(['classes', 'view', 'database']);
     KohanaJS.classPath = new Map();
     KohanaJS.viewPath = new Map();
     KohanaJS.nodePackages = [];
