@@ -1,0 +1,150 @@
+@startuml
+skinparam monochrome true
+skinparam shadowing false
+skinparam defaultFontName "URW DIN SemiCond"
+skinparam defaultFontSize 14
+skinparam roundcorner 10
+skinparam classAttributeIconSize 0
+
+
+class KohanaJS{
+  {static} VERSION
+  {static} SYS_PATH
+  {static} EXE_PATH
+  {static} APP_PATH
+  {static} MOD_PATH
+  {static} SYM_PATH
+  {static} VIEW_PATH
+  {static} config
+  {static} configForceUpdate
+  {static} nodePackages
+  {static} classPath
+  {static} viewPath
+  {static} configPath
+  {static} bootstrap
+
+  {static} init()
+  {static} addConfigFile(name)
+  {static} addNodeModule(dirname)
+  {static} flushCache()
+  {static} require(pathToFile)
+  {static} dereference(ref)
+  {static} resolveView(pathToFile)
+}
+
+class DatabaseDriver{
+  {static} create(datasource)
+  DatabaseDriver(datasource)
+  prepare(sql)
+  async transaction(fn)
+  async exec(sql)
+  async close()
+}
+
+class ORM{
+  {static} database
+  {static} tableName
+  {static} joinTablePrefix
+  {static} fields
+  {static} belongsTo
+  {static} hasMany
+  {static} belongsToMany
+  {static} defaultAdapter
+  {static} classPrefix
+
+  created_at
+  updated_at
+
+  ORM(id, options)
+  snapshot()
+  eagerLoad(option)
+  async write()
+  async read()
+  async delete()
+  async parent(fk)
+  async children(fk, Model)
+  async siblings(Model)
+  async add(model, weight)
+  async remove(model)
+  async removeAll(Model)
+
+  {static} create (Model, options)
+  {static} async factory (Model, id, options)
+  {static} async readAll (Model, options)
+  {static} async readBy (Model, key, values, options)
+  {static} async readWith (Model, criteria, options)
+  {static} async count (Model, options)
+  {static} async deleteAll(Model, options)
+  {static} async deleteBy (Model, key, values, options)
+  {static} async deleteWith (Model, criteria, options)
+  {static} async updateAll(Model, kv, columnValues, options)
+  {static} async updateBy (Model, key, values, columnValues, options)
+  {static} async updateWith (Model, criteria, columnValues, options)
+  {static} async insertAll(Model, columns, values, options)
+  {static} require(modelName)
+}
+ORM --> ORMAdapter
+class ORMAdapter{
+  {static} OP
+  
+  ORMAdapter(client, database)
+  defaultID()
+  processValues()
+  translateValue(values)
+  async read()
+  async update(values)
+  async insert(values)
+  async delete()
+  async hasMany(tableName, key)
+  async belongsToMany(modelTableName, jointTableName , lk, fk)
+  async add(models, weight, jointTableName, lk, fk)
+  async remove(models, jointTableName, lk, fk)
+  async removeAll(jointTableName, lk)
+  async readAll(kv, limit, offset, orderBy){
+  async readBy(key, values, limit, offset, orderBy){
+  async readWith(criteria, limit, offset, orderBy){
+  async count(kv){
+  async deleteAll(kv)
+  async deleteBy(key, values)
+  async deleteWith(criteria)
+  async updateAll(kv, columnValues)
+  async updateBy(key, values, columnValues)
+  async updateWith(criteria, columnValues)
+  async insertAll(columns, valueGroups, ids)
+}
+
+abstract class ControllerMixin{
+}
+ControllerMixin <-- ControllerMixinDatabase
+class ControllerMixinDatabase{
+  {static} dbConnection
+  {static} defaultDatabases
+  {static} defaultDatabaseDriver
+  databases
+  ControllerMixinDatabase(client, opts)
+}
+ControllerMixin <-- ControllerMixinMime
+class ControllerMixinMime{
+  ControllerMixinMime(client, headers)
+}
+ControllerMixin <-- ControllerMixinMultipartForm
+class ControllerMixinMultipartForm{
+  $_GET
+  $_POST
+  $_REQUEST
+  ControllerMixinMultipartForm(client, tempFolder)
+}
+ControllerMixin <-- ControllerMixinView
+class ControllerMixinView{
+  template
+  errorTemplate
+  layout
+  ControllerMixinView(client, layout, placeHolder, themePath, viewClass)
+  getView(file, data)
+  setTemplate(file, data)
+  setLayout(file, data)
+  setErrorTemplate(file, data)
+
+}
+
+@enduml

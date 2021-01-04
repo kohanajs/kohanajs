@@ -55,14 +55,17 @@ class HelperForm{
 }
 
 class MultipartForm extends ControllerMixin{
+  #tempFolder
+  #postData
+
   constructor(client, tempFolder) {
     super(client);
-    this.tempFolder = path.normalize(tempFolder);
+    this.#tempFolder = path.normalize(tempFolder);
 
     this.exports = {
       '$_GET'     : this.request.query,
-      '$_POST'    : () => this.postData,
-      '$_REQUEST' : () => Object.assign({}, this.request.query, this.postData)
+      '$_POST'    : () => this.#postData,
+      '$_REQUEST' : () => Object.assign({}, this.request.query, this.#postData)
     }
   }
   async before(){
@@ -74,10 +77,10 @@ class MultipartForm extends ControllerMixin{
       qs.parse(this.request.body);
 
     if(/^multipart\/form-data/.test(this.request.headers['content-type'])){
-      await HelperForm.parseMultipartForm(this.request, postData, this.tempFolder);
+      await HelperForm.parseMultipartForm(this.request, postData, this.#tempFolder);
     }
 
-    this.postData = postData;
+    this.#postData = postData;
   }
 }
 
