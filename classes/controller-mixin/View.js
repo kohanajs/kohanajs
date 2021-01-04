@@ -8,8 +8,18 @@ class ControllerMixinView extends ControllerMixin{
   #placeHolder;
   #layout;
 
-  constructor(client, layout='layout/default', placeHolder = 'main', themePath= null, viewClass = View.defaultViewClass) {
+  /**
+   *
+   * @param client
+   * @param opts
+   * @param opts.layout
+   * @param opts.placeHolder
+   * @param opts.themePath
+   * @param opts.viewClass
+   */
+  constructor(client, opts={}) {
     super(client);
+    const {layout='layout/default', placeHolder = 'main', themePath = undefined, viewClass = View.defaultViewClass} = opts
 
     this.#layout = ControllerMixinView.getView(layout, {}, themePath, viewClass);
     this.#placeHolder = placeHolder;

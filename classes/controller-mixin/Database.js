@@ -5,7 +5,7 @@ const crypto = require('crypto');
 
 class ControllerMixinDatabase extends ControllerMixin{
   static #dbConnection = new Map();
-  #options;
+  #driver;
   /**
    *
    * @param {Controller} client
@@ -13,23 +13,19 @@ class ControllerMixinDatabase extends ControllerMixin{
    */
   constructor(client, opts={}) {
     super(client);
+    const {append=undefined, databases=new Map(), driver=DatabaseDriver} = opts;
+    this.#driver = driver
 
-    this.#options = Object.assign({
-      append: null,
-      databases : new Map(),
-      driver : DatabaseDriver
-    }, opts)
-
-    if(this.#options.append){
+    if(append){
       //append to exist database connection
-      const conn = this.#getConnections(this.#options.databases);
+      const conn = this.#getConnections(databases);
       conn.forEach((v, k) => {
-        this.#options.append.set(k, v);
+        append.set(k, v);
       })
       return;
     }
 
-    const conn = this.#getConnections(this.#options.databases);
+    const conn = this.#getConnections(databases);
 
     this.exports = {
       databases: conn,
@@ -50,7 +46,7 @@ class ControllerMixinDatabase extends ControllerMixin{
 
     const connections = new Map();
     databaseMap.forEach((v, k) => {
-      connections.set(k, this.#options.driver.create(v));
+      connections.set(k, this.#driver.create(v));
     })
 
     connections.set('createdAt', Date.now());

@@ -1,4 +1,5 @@
 const {ControllerMixin} = require("@kohanajs/core-mvc");
+const KohanaJS = require('../../KohanaJS');
 
 const qs = require('qs');
 const fs = require('fs');
@@ -58,8 +59,16 @@ class MultipartForm extends ControllerMixin{
   #tempFolder
   #postData
 
-  constructor(client, tempFolder) {
+  /**
+   *
+   * @param client
+   * @param opts
+   * @param opts.tempFolder
+   */
+  constructor(client, opts={}) {
     super(client);
+    const {tempFolder = KohanaJS.EXE_PATH + '/tmp'} = opts
+
     this.#tempFolder = path.normalize(tempFolder);
 
     this.exports = {
@@ -68,6 +77,7 @@ class MultipartForm extends ControllerMixin{
       '$_REQUEST' : () => Object.assign({}, this.request.query, this.#postData)
     }
   }
+
   async before(){
     //no request body
     if( !this.request.body && !this.request.multipart)return;

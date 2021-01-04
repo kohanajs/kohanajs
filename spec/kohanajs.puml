@@ -115,31 +115,35 @@ class ORMAdapter{
 
 abstract class ControllerMixin{
 }
-ControllerMixin <-- ControllerMixinDatabase
+ControllerMixin <|-- ControllerMixinDatabase
+ControllerMixin <|-- ControllerMixinMime
+ControllerMixin <|-- ControllerMixinMultipartForm
+ControllerMixin <|-- ControllerMixinView
+
 class ControllerMixinDatabase{
   {static} dbConnection
   {static} defaultDatabases
   {static} defaultDatabaseDriver
   databases
-  ControllerMixinDatabase(client, opts)
+  ControllerMixinDatabase(client, opts{})
 }
-ControllerMixin <-- ControllerMixinMime
+
 class ControllerMixinMime{
   ControllerMixinMime(client, headers)
 }
-ControllerMixin <-- ControllerMixinMultipartForm
+
 class ControllerMixinMultipartForm{
   $_GET
   $_POST
   $_REQUEST
   ControllerMixinMultipartForm(client, tempFolder)
 }
-ControllerMixin <-- ControllerMixinView
+
 class ControllerMixinView{
   template
   errorTemplate
   layout
-  ControllerMixinView(client, layout, placeHolder, themePath, viewClass)
+  ControllerMixinView(client, options{layout, placeHolder, themePath, viewClass})
   getView(file, data)
   setTemplate(file, data)
   setLayout(file, data)
