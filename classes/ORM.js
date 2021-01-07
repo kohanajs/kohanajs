@@ -270,7 +270,7 @@ class ORM extends Model{
 
     const modelName = this.constructor.belongsTo.get(fk);
     const Model = ORM.require(modelName);
-    return await ORM.factory(Model, this[fk], {database: this.database});
+    return await ORM.factory(Model, this[fk], {database: this['database']});
   }
 
   /**
@@ -285,7 +285,7 @@ class ORM extends Model{
     const ModelClass = Model || ORM.require(modelNames[0][1]);
 
     const results = await this.adapter.hasMany(ModelClass.tableName, fk);
-    return results.map(x => Object.assign(new ModelClass(null, {database : this.database}), x));
+    return results.map(x => Object.assign(new ModelClass(null, {database : this['database']}), x));
   }
 
   #siblingInfo(model){
@@ -321,7 +321,7 @@ class ORM extends Model{
     const {joinTableName, lk, fk} = this.#siblingInfo(ORM.create(Model));
 
     const results = await this.adapter.belongsToMany(Model.tableName, joinTableName, lk, fk);
-    return results.map(x => Object.assign(ORM.create(Model, {database : this.database}), x));
+    return results.map(x => Object.assign(ORM.create(Model, {database : this['database']}), x));
   }
 
   /**
@@ -367,6 +367,9 @@ class ORM extends Model{
   /**
    * @param Model
    * @param options
+   * @param options.database
+   * @param options.adapter
+   * @param options.insertID
    * @returns {*}
    */
   static create (Model, options ={}) {
@@ -378,6 +381,8 @@ class ORM extends Model{
    * @param Model
    * @param id
    * @param options
+   * @param options.database
+   * @param options.adapter
    * @returns {Promise<*>}
    */
   static async factory (Model, id, options ={}){
@@ -391,10 +396,17 @@ class ORM extends Model{
    * read all records from the model
    * @param {Function<ORM>} Model
    * @param {object} options
+   * @param options.database
+   * @param options.adapter
+   * @param options.kv
+   * @param options.limit
+   * @param options.offset
+   * @param options.orderBy
+   * @param options.asArray
    * @returns {Promise<[]|object>}
    */
   static async readAll (Model, options={}){
-    const opt = Object.assign({database: this.database}, options);
+    const opt = Object.assign({database: ORM.database}, options);
     const m = ORM.create(Model, opt);
     const result = await m.adapter.readAll(opt.kv, opt.limit, opt.offset, opt.orderBy) || [];
 
@@ -409,10 +421,16 @@ class ORM extends Model{
    * @param key
    * @param values
    * @param options
+   * @param options.database
+   * @param options.adapter
+   * @param options.limit
+   * @param options.offset
+   * @param options.orderBy
+   * @param options.asArray
    * @returns {Promise<[]|object>}
    */
   static async readBy (Model, key, values, options={}) {
-    const opt = Object.assign({database: this.database}, options);
+    const opt = Object.assign({database: ORM.database}, options);
     const m = ORM.create(Model, opt);
     const result = await m.adapter.readBy(key, values, opt.limit, opt.offset, opt.orderBy);
 
@@ -427,11 +445,17 @@ class ORM extends Model{
    * @param Model
    * @param criteria
    * @param options
+   * @param options.database
+   * @param options.adapter
+   * @param options.limit
+   * @param options.offset
+   * @param options.orderBy
+   * @param options.asArray
    * @returns {Promise<[]|object>}
    */
   static async readWith (Model, criteria=[], options = {}){
     if(criteria.length === 0)return [];
-    const opt = Object.assign({database: this.database}, options);
+    const opt = Object.assign({database: ORM.database}, options);
     const m = ORM.create(Model, opt);
     const result = await m.adapter.readWith(criteria, opt.limit, opt.offset, opt.orderBy);
 
@@ -441,13 +465,22 @@ class ORM extends Model{
     return result.map(x => Object.assign( ORM.create(Model, opt), x));
   }
 
+  /**
+   *
+   * @param Model
+   * @param options
+   * @param options.database
+   * @param options.adapter
+   * @param options.kv
+   * @returns {Promise<*>}
+   */
   static async count (Model, options={}){
-    const m = ORM.create(Model, Object.assign({database: this.database}, options));
+    const m = ORM.create(Model, Object.assign({database: ORM.database}, options));
     return await m.adapter.count(options.kv);
   }
 
   static async deleteAll(Model, options={}){
-    const m = ORM.create(Model, Object.assign({database: this.database}, options));
+    const m = ORM.create(Model, Object.assign({database: ORM.database}, options));
     await m.adapter.deleteAll(options.kv);
   }
 
@@ -460,7 +493,7 @@ class ORM extends Model{
    * @returns {Promise<void>}
    */
   static async deleteBy (Model, key, values, options={}) {
-    const m = ORM.create(Model, Object.assign({database: this.database}, options));
+    const m = ORM.create(Model, Object.assign({database: ORM.database}, options));
     return m.adapter.deleteBy(key, values);
   }
 
@@ -474,7 +507,7 @@ class ORM extends Model{
   static async deleteWith (Model, criteria, options = {}){
     if(!criteria || criteria.length === 0)throw new Error(`${Model.name} delete with no criteria`);
 
-    const m = ORM.create(Model, Object.assign({database: this.database}, options));
+    const m = ORM.create(Model, Object.assign({database: ORM.database}, options));
     return await m.adapter.deleteWith(criteria);
   }
 
@@ -485,7 +518,7 @@ class ORM extends Model{
    * @param {Map} columnValues
    */
   static async updateAll(Model, kv, columnValues, options={}){
-    const m = ORM.create(Model, Object.assign({database: this.database}, options));
+    const m = ORM.create(Model, Object.assign({database: ORM.database}, options));
     await m.adapter.updateAll(kv, columnValues);
   }
 
@@ -499,7 +532,7 @@ class ORM extends Model{
    * @returns {Promise<void>}
    */
   static async updateBy (Model, key, values, columnValues, options={}) {
-    const m = ORM.create(Model, Object.assign({database: this.database}, options));
+    const m = ORM.create(Model, Object.assign({database: ORM.database}, options));
     return m.adapter.updateBy(key, values, columnValues);
   }
 
@@ -515,7 +548,7 @@ class ORM extends Model{
     if(!criteria || criteria.length === 0)throw new Error(`${Model.name} update with no criteria`);
     if(!columnValues || columnValues.size === 0)throw new Error(`${Model.name} update without values`);
 
-    const m = ORM.create(Model, Object.assign({database: this.database}, options));
+    const m = ORM.create(Model, Object.assign({database: ORM.database}, options));
     return await m.adapter.updateWith(criteria, columnValues);
   }
 
@@ -534,7 +567,7 @@ class ORM extends Model{
       if(!Model.fields.has(x))throw new Error(`${Model.name} insert invalid columns ${x}`);
     })
 
-    const m = ORM.create(Model, Object.assign({database: this.database}, options));
+    const m = ORM.create(Model, Object.assign({database: ORM.database}, options));
     return await m.adapter.insertAll(columns, values, options.insertIDs || []);
   }
 

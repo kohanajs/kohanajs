@@ -30,6 +30,7 @@ const path = require('path');
 
 class KohanaJS{
   static #configs = new Set();
+  static #configSources = new Map();
 
   static VERSION  = '2.0.0';
   static SYS_PATH = __dirname;
@@ -48,7 +49,7 @@ class KohanaJS{
   static bootstrap = {modules: [], system: []};
 
   static init(EXE_PATH = null, APP_PATH = null, MOD_PATH = null, SYM_PATH = null, VIEW_PATH= null) {
-    KohanaJS.#configs   = new Set(['classes', 'view', 'database']);
+    KohanaJS.#configs   = new Set();
     KohanaJS.classPath = new Map();
     KohanaJS.viewPath = new Map();
     KohanaJS.nodePackages = [];
@@ -56,7 +57,11 @@ class KohanaJS{
     //set paths
     KohanaJS.#setPath(EXE_PATH, APP_PATH, MOD_PATH, SYM_PATH, VIEW_PATH);
     KohanaJS.#loadBootStrap();
-    KohanaJS.#updateConfig();
+    KohanaJS.initConfig(new Map([
+      ['classes', require('./config/classes')],
+      ['view', require('./config/view')],
+      ['database', require('./config/database')]
+    ]));
     KohanaJS.#reloadModuleInit();
 
     return KohanaJS;
@@ -67,7 +72,7 @@ class KohanaJS{
    * @param {string} name config file name without extension
    */
   static addConfigFile(name){
-    KohanaJS.#configs.add(name)
+    KohanaJS.#configs.add(name);
   }
 
   static updateConfig(){
@@ -118,6 +123,19 @@ class KohanaJS{
 
   static resolveView(pathToFile){
     return KohanaJS.#resolve(pathToFile, 'views', KohanaJS.viewPath);
+  }
+
+  /**
+   *
+   * @param {Map} configMap
+   */
+  static initConfig(configMap){
+    configMap.forEach((v, k) => {
+      KohanaJS.#configs.add(k);
+      KohanaJS.#configSources.set(k, v);
+    });
+
+    KohanaJS.#updateConfig();
   }
 
   //private methods
@@ -185,7 +203,7 @@ class KohanaJS{
 
       try{
         const file = KohanaJS.#resolve(fileName, 'config', KohanaJS.configPath, true);
-        KohanaJS.config[key] = Object.assign({}, require(file));
+        KohanaJS.config[key] = Object.assign({}, KohanaJS.#configSources.get(key), require(file));
         delete require.cache[path.normalize(file)];
       }catch{
         //file not found.
