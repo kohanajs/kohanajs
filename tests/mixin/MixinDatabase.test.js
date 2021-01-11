@@ -6,12 +6,11 @@ describe('test mixin database', ()=>{
   test('test add mixin', async ()=>{
     class C extends Controller{
       constructor(request) {
-        super(request, false);
+        super(request);
         this.state.set('databaseMap', new Map([['session', '']]));
-        this.init();
+        C.mix(this, [ControllerMixinDatabase])
       }
     }
-    C.mixin([ControllerMixinDatabase]);
 
     const c = new C({}, );
     expect(c.get('databases').get('session')).not.toBe(null);
@@ -19,20 +18,18 @@ describe('test mixin database', ()=>{
 
   test('test append', async ()=>{
     class C extends Controller{
-      static mixins = [ControllerMixinDatabase];
       constructor(request) {
-        super(request, false);
+        super(request);
         this.state.set('databaseMap', new Map([['session', '']]));
-        this.init();
+        C.mix(this, [ControllerMixinDatabase])
       }
     }
 
     class D extends C{
-      static mixins = [ControllerMixinDatabase];
       constructor(request) {
         super(request);
         this.state.set('databaseMap', new Map([['foo', '']]));
-        this.init();
+        C.mix(this, [ControllerMixinDatabase])
       }
     }
 

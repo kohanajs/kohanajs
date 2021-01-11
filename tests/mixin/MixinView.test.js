@@ -3,8 +3,12 @@ const ControllerMixinView = require('../../classes/controller-mixin/View');
 
 describe('Controller Mixin View Test', function () {
   test('constructor', async ()=>{
-    class C extends Controller{}
-    C.mixin([ControllerMixinView]);
+    class C extends Controller{
+      constructor(request) {
+        super(request);
+        C.mix(this, [ControllerMixinView]);
+      }
+    }
     const c = new C({});
 
     expect(typeof c.getView).toBe('function');
@@ -16,8 +20,12 @@ describe('Controller Mixin View Test', function () {
   });
 
   test('execute', async ()=>{
-    class C extends Controller{}
-    C.mixin([ControllerMixinView]);
+    class C extends Controller{
+      constructor(request) {
+        super(request);
+        C.mix(this, [ControllerMixinView]);
+      }
+    }
     const c = new C({});
 
     Object.assign(c.get('layout').data, {header: 'head', footer: 'foot'});
@@ -26,8 +34,12 @@ describe('Controller Mixin View Test', function () {
   });
 
   test('set template', async ()=>{
-    class C extends Controller{}
-    C.mixin([ControllerMixinView]);
+    class C extends Controller{
+      constructor(request) {
+        super(request);
+        C.mix(this, [ControllerMixinView]);
+      }
+    }
     const c = new C({});
 
     Object.assign(c.get('layout').data, {header: 'head', footer: 'foot'});
@@ -42,16 +54,24 @@ describe('Controller Mixin View Test', function () {
   })
 
   test('getView', async ()=>{
-    class C extends Controller{}
-    C.mixin([ControllerMixinView]);
+    class C extends Controller{
+      constructor(request) {
+        super(request);
+        C.mix(this, [ControllerMixinView]);
+      }
+    }
     const c = new C({});
     const v = c.getView('', {content: 'hello'})
     expect(v.data.content).toBe('hello');
   });
 
   test('coverage', async ()=>{
-    class C extends Controller{}
-    C.mixin([ControllerMixinView]);
+    class C extends Controller{
+      constructor(request) {
+        super(request);
+        C.mix(this, [ControllerMixinView]);
+      }
+    }
     const c = new C({});
     const v = c.getView('')
     expect(await v.render()).toBe('{}');
@@ -60,8 +80,12 @@ describe('Controller Mixin View Test', function () {
   });
 
   test('errorTemplate', async ()=>{
-    class C extends Controller{}
-    C.mixin([ControllerMixinView]);
+    class C extends Controller{
+      constructor(request) {
+        super(request);
+        C.mix(this, [ControllerMixinView]);
+      }
+    }
     const c = new C({});
 
     c.action_test = async () =>{
@@ -79,8 +103,12 @@ describe('Controller Mixin View Test', function () {
   })
 
   test('errorWithoutTemplate', async ()=>{
-    class C extends Controller{}
-    C.mixin([ControllerMixinView]);
+    class C extends Controller{
+      constructor(request) {
+        super(request);
+        C.mix(this, [ControllerMixinView]);
+      }
+    }
     const c = new C({});
 
     c.action_test = async () =>{
@@ -96,8 +124,12 @@ describe('Controller Mixin View Test', function () {
   })
 
   test('set Layout', async ()=>{
-    class C extends Controller{}
-    C.mixin([ControllerMixinView]);
+    class C extends Controller{
+      constructor(request) {
+        super(request);
+        C.mix(this, [ControllerMixinView]);
+      }
+    }
     const c = new C({});
     c.setLayout('layout', {"foo": "bar"});
 
@@ -113,8 +145,12 @@ describe('Controller Mixin View Test', function () {
   });
 
   test('exit with 302', async ()=>{
-    class C extends Controller{}
-    C.mixin([ControllerMixinView]);
+    class C extends Controller{
+      constructor(request) {
+        super(request);
+        C.mix(this, [ControllerMixinView]);
+      }
+    }
     const c = new C({});
 
     c.setLayout('layout', {"hello": "world"});

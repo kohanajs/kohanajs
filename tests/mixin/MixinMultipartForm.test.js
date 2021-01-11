@@ -7,9 +7,8 @@ describe('Controller Mixin Multipart Form test', ()=>{
     class C extends Controller{
       constructor(request) {
         super(request, false);
-        C.mixin([ControllerMixinMultipartForm]);
+        C.mix(this, [ControllerMixinMultipartForm]);
         this.state.set('tempFolder', path.normalize(__dirname + '/temp'))
-        this.init();
       }
     }
 
