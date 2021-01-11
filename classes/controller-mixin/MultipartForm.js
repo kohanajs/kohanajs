@@ -56,41 +56,25 @@ class HelperForm{
 }
 
 class MultipartForm extends ControllerMixin{
-  #tempFolder
-  #postData
-
-  /**
-   *
-   * @param client
-   * @param opts
-   * @param opts.tempFolder
-   */
-  constructor(client, opts={}) {
-    super(client);
-    const {tempFolder = KohanaJS.EXE_PATH + '/tmp'} = opts
-
-    this.#tempFolder = path.normalize(tempFolder);
-
-    this.exports = {
-      '$_GET'     : this.request.query,
-      '$_POST'    : () => this.#postData,
-      '$_REQUEST' : () => Object.assign({}, this.request.query, this.#postData)
-    }
+  static init(state){
+    if(!state.get('tempFolder'))state.set('tempFolder', path.normalize(KohanaJS.EXE_PATH + '/tmp'))
+    state.set('$_GET', null);
   }
 
-  async before(){
-    //no request body
-    if( !this.request.body && !this.request.multipart)return;
+  static async before(state){
+    const request = state.get('client').request;
+    if( !request.body && !request.multipart)return;
 
-    const postData = (typeof this.request.body === 'object') ?
-      Object.assign({}, this.request.body) :
-      qs.parse(this.request.body);
+    const postData = (typeof request.body === 'object') ?
+      Object.assign({}, request.body) :
+      qs.parse(request.body);
 
-    if(/^multipart\/form-data/.test(this.request.headers['content-type'])){
-      await HelperForm.parseMultipartForm(this.request, postData, this.#tempFolder);
+    if(/^multipart\/form-data/.test(request.headers['content-type'])){
+      await HelperForm.parseMultipartForm(request, postData, state.get('tempFolder'));
     }
-
-    this.#postData = postData;
+    state.set('$_POST', postData);
+    state.set('$_GET',  request.query);
+    state.set('$_REQUEST', {...postData, ...request.query});
   }
 }
 

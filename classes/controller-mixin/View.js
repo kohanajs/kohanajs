@@ -1,56 +1,52 @@
 const {ControllerMixin, View} = require("@kohanajs/core-mvc");
 
 class ControllerMixinView extends ControllerMixin{
-  /** @type {View} */
-  #template = null;
-  /** @type {View} */
-  #errorTemplate = null;
-  #placeHolder;
-  #layout;
+  static LAYOUT_FILE = 'layoutFile';
+  static PLACEHOLDER = 'placeHolder';
+  static VIEW_CLASS  = 'viewClass';
+  static THEME_PATH = 'themePath';
+  static LAYOUT = 'layout';
+  static TEMPLATE = 'template';
+  static ERROR_TEMPLATE = 'errorTemplate';
 
-  /**
-   *
-   * @param client
-   * @param opts
-   * @param opts.layout
-   * @param opts.placeHolder
-   * @param opts.themePath
-   * @param opts.viewClass
-   */
-  constructor(client, opts={}) {
-    super(client);
-    const {layout='layout/default', placeHolder = 'main', themePath = undefined, viewClass = View.defaultViewClass} = opts
+  static init(state){
+    if(!state.get(this.LAYOUT_FILE))state.set(this.LAYOUT_FILE, 'layout/default');
+    if(!state.get(this.PLACEHOLDER))state.set(this.PLACEHOLDER, 'main');
+    if(!state.get(this.VIEW_CLASS))state.set(this.VIEW_CLASS, View.defaultViewClass);
+    if(!state.get(this.LAYOUT))state.set(this.LAYOUT, ControllerMixinView.getView(state.get(this.LAYOUT_FILE), {}, state.get(this.THEME_PATH), state.get(this.VIEW_CLASS)))
 
-    this.#layout = ControllerMixinView.getView(layout, {}, themePath, viewClass);
-    this.#placeHolder = placeHolder;
-
-    this.exports = {
-      getView          : (file, data= {}) => ControllerMixinView.getView(file, data, themePath, viewClass),
-      setTemplate      : (file, data= {}) => (this.#template      = (typeof file === 'string') ? ControllerMixinView.getView(file, data, themePath, viewClass) : file),
-      setLayout        : (file, data= {}) => (this.#layout        = (typeof file === 'string') ? ControllerMixinView.getView(file, data, themePath, viewClass) : file),
-      setErrorTemplate : (file, data= {}) => (this.#errorTemplate = (typeof file === 'string') ? ControllerMixinView.getView(file, data, themePath, viewClass) : file),
-      template         : () => this.#template,
-      errorTemplate    : () => this.#errorTemplate,
-      layout           : () => this.#layout,
-    }
+    const client = state.get('client');
+    client.getView          = (file, data= {}) => ControllerMixinView.getView(file, data, state.get(this.THEME_PATH), state.get(this.VIEW_CLASS));
+    client.setTemplate      = (file, data= {}) => state.set(this.TEMPLATE,      (typeof file === 'string') ? ControllerMixinView.getView(file, data, state.get(this.THEME_PATH), state.get(this.VIEW_CLASS)) : file);
+    client.setLayout        = (file, data= {}) => state.set(this.LAYOUT,        (typeof file === 'string') ? ControllerMixinView.getView(file, data, state.get(this.THEME_PATH), state.get(this.VIEW_CLASS)) : file);
+    client.setErrorTemplate = (file, data= {}) => state.set(this.ERROR_TEMPLATE, (typeof file === 'string') ? ControllerMixinView.getView(file, data, state.get(this.THEME_PATH), state.get(this.VIEW_CLASS)) : file);
   }
 
-  async after(){
+  static async after(state){
     //render template and put into layout's main output.
     //no template, replace the controller body string into layout.
-    this.#layout.data[this.#placeHolder] = (this.#template) ? await this.#template.render() : this.client.body;
-    this.client.body = await this.#layout.render();
+    const template = state.get(this.TEMPLATE);
+    const client = state.get('client');
+    const layout = state.get(this.LAYOUT);
+    layout.data[state.get(this.PLACEHOLDER)] = template ? await template.render() : client.body;
+    client.body = await layout.render();
   }
 
-  async exit(code){
+  static async exit(state){
+    const client = state.get('client');
+    const code = client.status;
+    const errorTemplate = state.get(this.ERROR_TEMPLATE);
+    const layout = state.get(this.LAYOUT);
+    const placeHolder = state.get(this.PLACEHOLDER);
+
     if(code === 302) return;
-    if(this.#errorTemplate){
-      Object.assign(this.#errorTemplate.data, {body: this.client.body});
-      this.#layout.data[this.#placeHolder] = await this.#errorTemplate.render();
+    if(errorTemplate){
+      Object.assign(errorTemplate.data, {body: client.body});
+      layout.data[placeHolder] = await errorTemplate.render();
     }else{
-      this.#layout.data[this.#placeHolder] = this.client.body;
+      layout.data[placeHolder] = client.body;
     }
-    this.client.body = await this.#layout.render();
+    client.body = await layout.render();
   }
 
   static getView(path, data, themePath, viewClass){

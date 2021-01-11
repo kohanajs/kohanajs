@@ -33,9 +33,7 @@ module.exports = {
   ControllerMixin : core.ControllerMixin,
   KohanaJS : KohanaJS,
   addNodeModule: KohanaJS.addNodeModule,
-  dereference : KohanaJS.dereference,
   init : KohanaJS.init,
-  mergeOption : KohanaJS.mergeOption,
 
   ORM: require('./classes/ORM'),
   ORMAdapter: require('./classes/ORMAdapter'),

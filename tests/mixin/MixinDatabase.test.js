@@ -4,15 +4,40 @@ const $ = ref => (typeof ref === 'function')? ref() : ref;
 
 describe('test mixin database', ()=>{
   test('test add mixin', async ()=>{
-    const c = new Controller({});
-    c.addMixin(new ControllerMixinDatabase(c, {databases: new Map([['session', '']])}));
-    expect($(c.databases).get('session')).not.toBe(null);
+    class C extends Controller{
+      constructor(request) {
+        super(request, false);
+        this.state.set('databaseMap', new Map([['session', '']]));
+        this.init();
+      }
+    }
+    C.mixin([ControllerMixinDatabase]);
+
+    const c = new C({}, );
+    expect(c.get('databases').get('session')).not.toBe(null);
   });
 
   test('test append', async ()=>{
-    const c = new Controller({});
-    c.addMixin(new ControllerMixinDatabase(c, {databases: new Map([['session', '']])}));
-    c.addMixin(new ControllerMixinDatabase(c, {databases: new Map([['foo', '']]), append: c.databases}));
-    expect(Array.from($(c.databases).keys()).join(',')).toBe('session,createdAt,foo');
+    class C extends Controller{
+      static mixins = [ControllerMixinDatabase];
+      constructor(request) {
+        super(request, false);
+        this.state.set('databaseMap', new Map([['session', '']]));
+        this.init();
+      }
+    }
+
+    class D extends C{
+      static mixins = [ControllerMixinDatabase];
+      constructor(request) {
+        super(request);
+        this.state.set('databaseMap', new Map([['foo', '']]));
+        this.init();
+      }
+    }
+
+    const c = new D({});
+
+    expect(Array.from(c.get('databases').keys()).join(',')).toBe('session,createdAt,foo');
   })
 })

@@ -1,35 +1,40 @@
 const {View, Controller} = require('@kohanajs/core-mvc');
 const ControllerMixinView = require('../../classes/controller-mixin/View');
-const $ = ref => (typeof ref === 'function')? ref() : ref;
 
 describe('Controller Mixin View Test', function () {
   test('constructor', async ()=>{
-    const c = new Controller({});
-    c.addMixin(new ControllerMixinView(c));
+    class C extends Controller{}
+    C.mixin([ControllerMixinView]);
+    const c = new C({});
+
     expect(typeof c.getView).toBe('function');
     expect(typeof c.setTemplate).toBe('function');
     expect(typeof c.setErrorTemplate).toBe('function');
-    expect(typeof c.template).toBe('function');
-    expect(typeof c.errorTemplate).toBe('function');
-    expect(typeof c.layout).toBe('function');
+    expect(typeof c.get('template')).toBe('undefined');
+    expect(typeof c.get('errorTemplate')).toBe('undefined');
+    expect(typeof c.get('layout')).toBe('object');
   });
 
   test('execute', async ()=>{
-    const c = new Controller({});
-    c.addMixin(new ControllerMixinView(c));
-    Object.assign($(c.layout).data, {header: 'head', footer: 'foot'});
+    class C extends Controller{}
+    C.mixin([ControllerMixinView]);
+    const c = new C({});
+
+    Object.assign(c.get('layout').data, {header: 'head', footer: 'foot'});
     const r = await c.execute();
     expect(r.body).toBe('{"header":"head","footer":"foot","main":""}');
   });
 
   test('set template', async ()=>{
-    const c = new Controller({});
-    c.addMixin(new ControllerMixinView(c));
-    Object.assign($(c.layout).data, {header: 'head', footer: 'foot'});
+    class C extends Controller{}
+    C.mixin([ControllerMixinView]);
+    const c = new C({});
+
+    Object.assign(c.get('layout').data, {header: 'head', footer: 'foot'});
     c.setTemplate('', {content: 'hello'})
 
-    expect($(c.template).data.content).toBe('hello');
-    expect($(c.layout).data.header).toBe('head');
+    expect(c.get('template').data.content).toBe('hello');
+    expect(c.get('layout').data.header).toBe('head');
 
     const r = await c.execute();
     expect(r.body).toBe('{"header":"head","footer":"foot","main":"{\\\"content\\\":\\\"hello\\\"}"}');
@@ -37,15 +42,17 @@ describe('Controller Mixin View Test', function () {
   })
 
   test('getView', async ()=>{
-    const c = new Controller({});
-    c.addMixin(new ControllerMixinView(c));
+    class C extends Controller{}
+    C.mixin([ControllerMixinView]);
+    const c = new C({});
     const v = c.getView('', {content: 'hello'})
     expect(v.data.content).toBe('hello');
   });
 
   test('coverage', async ()=>{
-    const c = new Controller({});
-    c.addMixin(new ControllerMixinView(c));
+    class C extends Controller{}
+    C.mixin([ControllerMixinView]);
+    const c = new C({});
     const v = c.getView('')
     expect(await v.render()).toBe('{}');
 
@@ -53,17 +60,18 @@ describe('Controller Mixin View Test', function () {
   });
 
   test('errorTemplate', async ()=>{
-    const c = new Controller({});
+    class C extends Controller{}
+    C.mixin([ControllerMixinView]);
+    const c = new C({});
 
     c.action_test = async () =>{
       throw new Error('error throw');
     }
 
-    c.addMixin(new ControllerMixinView(c));
-    Object.assign($(c.layout).data, {header: 'head', footer: 'foot'});
+    Object.assign(c.get('layout').data, {header: 'head', footer: 'foot'});
     c.setErrorTemplate('', {content: 'error'});
 
-    const errorTemplate = c.errorTemplate();
+    const errorTemplate = c.get('errorTemplate');
     expect(errorTemplate.data.content).toBe('error');
 
     const result = await c.execute('test');
@@ -71,14 +79,15 @@ describe('Controller Mixin View Test', function () {
   })
 
   test('errorWithoutTemplate', async ()=>{
-    const c = new Controller({});
+    class C extends Controller{}
+    C.mixin([ControllerMixinView]);
+    const c = new C({});
 
     c.action_test = async () =>{
       throw new Error('error throw');
     }
 
-    c.addMixin(new ControllerMixinView(c));
-    Object.assign($(c.layout).data, {header: 'head', footer: 'foot'});
+    Object.assign(c.get('layout').data, {header: 'head', footer: 'foot'});
 
     const result = await c.execute('test');
     expect(result.body).toBe(`{"header":"head","footer":"foot","main":"<pre>500 / error throw</pre>"}`)
@@ -87,15 +96,16 @@ describe('Controller Mixin View Test', function () {
   })
 
   test('set Layout', async ()=>{
-    const c = new Controller({});
-    c.addMixin(new ControllerMixinView(c));
+    class C extends Controller{}
+    C.mixin([ControllerMixinView]);
+    const c = new C({});
     c.setLayout('layout', {"foo": "bar"});
 
-    Object.assign($(c.layout).data, {header: 'head', footer: 'foot'});
+    Object.assign(c.get('layout').data, {header: 'head', footer: 'foot'});
     c.setTemplate('', {content: 'hello'})
 
-    expect($(c.template).data.content).toBe('hello');
-    expect($(c.layout).data.header).toBe('head');
+    expect(c.get('template').data.content).toBe('hello');
+    expect(c.get('layout').data.header).toBe('head');
 
     const r = await c.execute();
     expect(r.body).toBe('{"foo":"bar","header":"head","footer":"foot","main":"{\\\"content\\\":\\\"hello\\\"}"}');
@@ -103,8 +113,10 @@ describe('Controller Mixin View Test', function () {
   });
 
   test('exit with 302', async ()=>{
-    const c = new Controller({});
-    c.addMixin(new ControllerMixinView(c));
+    class C extends Controller{}
+    C.mixin([ControllerMixinView]);
+    const c = new C({});
+
     c.setLayout('layout', {"hello": "world"});
     c.setTemplate('tpl', {"content" : "wow"});
     c.action_test = async () =>{await c.exit(302);}
@@ -112,16 +124,14 @@ describe('Controller Mixin View Test', function () {
     const r = await c.execute();
     expect(r.body).toBe('{"hello":"world","main":"{\\\"content\\\":\\\"wow\\\"}"}');
 
-    const c2 = new Controller({});
-    c2.addMixin(new ControllerMixinView(c2));
+    const c2 = new C({});
     c2.setLayout('layout', {"hello": "world"});
     c2.setTemplate('tpl', {"content" : "wow"});
     c2.action_test = async () =>{await c2.exit(302);}
     const r2 = await c2.execute('test');
     expect(r2.body).toBe('');
 
-    const c3 = new Controller({});
-    c3.addMixin(new ControllerMixinView(c3));
+    const c3 = new C({});
     c3.setLayout('layout', {"hello": "world"});
     c3.setTemplate('tpl', {"content" : "wow"});
     c3.action_test = async () =>{await c3.exit(302);}

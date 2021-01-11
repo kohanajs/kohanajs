@@ -5,38 +5,28 @@ const crypto = require('crypto');
 
 class ControllerMixinDatabase extends ControllerMixin{
   static #dbConnection = new Map();
-  #driver;
-  /**
-   *
-   * @param {Controller} client
-   * @param {Object} opts
-   */
-  constructor(client, opts={}) {
-    super(client);
-    const {append=undefined, databases=new Map(), driver=DatabaseDriver} = opts;
-    this.#driver = driver
+  static DATABASE_MAP = 'databaseMap';
+  static DATABASE_DRIVER = 'databaseDriver';
+  static DATABASES = 'databases';
 
-    if(append){
-      //append to exist database connection
-      const conn = this.#getConnections(databases);
-      conn.forEach((v, k) => {
-        append.set(k, v);
-      })
-      return;
-    }
+  static init(state){
+    if(!state.get(this.DATABASE_MAP))state.set(this.DATABASE_MAP, new Map());
+    if(!state.get(this.DATABASES))state.set(this.DATABASES, new Map());
+    if(!state.get(this.DATABASE_DRIVER))state.set(this.DATABASE_DRIVER, DatabaseDriver);
+    state.get('client').databases = state.get(this.DATABASES);
 
-    const conn = this.#getConnections(databases);
-
-    this.exports = {
-      databases: conn,
-    }
+    const conn = this.#getConnections(state.get(this.DATABASE_MAP), state.get(this.DATABASE_DRIVER));
+    conn.forEach((v, k) => {
+      state.get(this.DATABASES).set(k, v);
+    })
   }
 
   /**
    *
    * @param {Map} databaseMap
+   * @param {DatabaseDriver.} driverClass
    */
-  #getConnections(databaseMap){
+  static #getConnections(databaseMap, driverClass){
     const hash = crypto.createHash('sha256');
     hash.update(Array.from(databaseMap.keys()).join('') + Array.from(databaseMap.values()).join(''));
     const key = hash.digest('hex');
@@ -46,7 +36,7 @@ class ControllerMixinDatabase extends ControllerMixin{
 
     const connections = new Map();
     databaseMap.forEach((v, k) => {
-      connections.set(k, this.#driver.create(v));
+      connections.set(k, driverClass.create(v));
     })
 
     connections.set('createdAt', Date.now());

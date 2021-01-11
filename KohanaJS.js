@@ -117,10 +117,6 @@ class KohanaJS{
     return require(file);
   }
 
-  static dereference(ref){
-    return (typeof ref === 'function')? ref() : ref
-  }
-
   static resolveView(pathToFile){
     return KohanaJS.#resolve(pathToFile, 'views', KohanaJS.viewPath);
   }

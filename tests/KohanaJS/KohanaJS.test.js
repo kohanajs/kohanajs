@@ -284,32 +284,6 @@ describe('KohanaJS test', ()=>{
     expect(tar.greeting()).toBe('Hello from Tar');
   })
 
-  test('dereference', ()=>{
-    const {dereference:$} = kohanaJS;
-    const a = {foo: 'bar', kaa: 'laa'};
-
-    class C {
-      constructor(ref) {
-        this.ref = ref;
-      }
-
-      greeting(){
-        return 'hello ' + $(this.ref);
-      }
-    }
-
-    const ca = new C(a.foo); //pass by value
-    const cb = new C(()=>a.foo); //pass by reference
-    expect(ca.greeting()).toBe('hello bar');
-    expect(cb.greeting()).toBe('hello bar');
-
-    //source changed
-    a.foo = 'shaa';
-
-    expect(ca.greeting()).toBe('hello bar');
-    expect(cb.greeting()).toBe('hello shaa');
-  })
-
   test('explict set class to KohanaJS.require', async ()=>{
     const C = class Collection{}
     kohanaJS.classPath.set('model/Collection.js', C);
