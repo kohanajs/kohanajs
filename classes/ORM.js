@@ -370,7 +370,7 @@ class ORM extends Model{
    * @param options.database
    * @param options.adapter
    * @param options.insertID
-   * @returns {*}
+   * @returns {ORM}
    */
   static create (Model, options ={}) {
     return new Model(null, options);

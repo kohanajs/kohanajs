@@ -56,13 +56,17 @@ class HelperForm{
 }
 
 class MultipartForm extends ControllerMixin{
+  static POST_DATA = '$_POST';
+  static GET_DATA = '$_GET';
+  static REQUEST_DATA = '$_REQUEST';
+  static TEMP_FOLDER = 'tempFolder';
+
   static init(state){
-    if(!state.get('tempFolder'))state.set('tempFolder', path.normalize(KohanaJS.EXE_PATH + '/tmp'))
-    state.set('$_GET', null);
+    if(!state.get(this.TEMP_FOLDER))state.set(this.TEMP_FOLDER, path.normalize(KohanaJS.EXE_PATH + '/tmp'))
   }
 
   static async before(state){
-    const request = state.get('client').request;
+    const request = state.get(ControllerMixin.CLIENT).request;
     if( !request.body && !request.multipart)return;
 
     const postData = (typeof request.body === 'object') ?
@@ -70,11 +74,11 @@ class MultipartForm extends ControllerMixin{
       qs.parse(request.body);
 
     if(/^multipart\/form-data/.test(request.headers['content-type'])){
-      await HelperForm.parseMultipartForm(request, postData, state.get('tempFolder'));
+      await HelperForm.parseMultipartForm(request, postData, state.get(this.TEMP_FOLDER));
     }
-    state.set('$_POST', postData);
-    state.set('$_GET',  request.query);
-    state.set('$_REQUEST', {...postData, ...request.query});
+    state.set(this.POST_DATA, postData);
+    state.set(this.GET_DATA,  request.query);
+    state.set(this.REQUEST_DATA, {...postData, ...request.query});
   }
 }
 
