@@ -197,14 +197,9 @@ class KohanaJS{
       const fileName = `${key}.js`;
       KohanaJS.configPath.set(fileName, null); // never cache site config file.
 
-      try{
-        const file = KohanaJS.#resolve(fileName, 'config', KohanaJS.configPath, true);
-        KohanaJS.config[key] = Object.assign({}, KohanaJS.#configSources.get(key), require(file));
-        delete require.cache[path.normalize(file)];
-      }catch{
-        //file not found.
-        KohanaJS.config[key] = undefined;
-      }
+      const file = KohanaJS.#resolve(fileName, 'config', KohanaJS.configPath, true);
+      KohanaJS.config[key] = Object.assign({}, KohanaJS.#configSources.get(key), require(file));
+      delete require.cache[path.normalize(file)];
     })
   };
 
