@@ -17,6 +17,7 @@ class ORMAdapter{
     'START_GROUP' : '(',
     'END_GROUP' : ')',
     'NULL' : 'NULL',
+    'IS' : 'IS'
   };
 
   /**
