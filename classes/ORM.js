@@ -106,6 +106,8 @@ class ORM extends Model{
   /**
    *
    * @param {object} option
+   * @param {String[]|*} option.with
+   * @param {object} option.*
    * @returns {Promise<void>}
    */
   async eagerLoad(option = {}){
