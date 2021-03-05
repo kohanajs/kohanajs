@@ -566,7 +566,7 @@ class ORM extends Model{
     //verify columns
     columns.forEach(x => {
       if(x === 'id')return;
-      if(!Model.fields.has(x))throw new Error(`${Model.name} insert invalid columns ${x}`);
+      if(!Model.fields.has(x) && !Model.belongsTo.has(x))throw new Error(`${Model.name} insert invalid columns ${x}`);
     })
 
     const m = ORM.create(Model, Object.assign({database: ORM.database}, options));
