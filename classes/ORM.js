@@ -133,34 +133,48 @@ class ORM extends Model{
 
     const parents = [];
     this.constructor.belongsTo.forEach((v, k)=>{
+      if(allowClasses && !allowClasses.has(v))return;
+
       const name = k.replace('_id', '');
       const opt = option[name];
 
       if(!opt)return;
-      parents.push(async () => ({ "name" : name, "instance": await this.parent(k), "opt": opt}));
+      parents.push({ "name" : name, "opt": opt, 'key': k});
     });
 
-    for(let i=0; i< parents.length; i++){
-      const x = await parents[i]();
-      if(!x.instance)continue; //parent can be null
-
-      this[x.name] = x.instance;
-      await x.instance.eagerLoad(x.opt)
-    }
+    await Promise.all(
+      parents.map(async p =>{
+        const instance = await this.parent(p.key);
+        if(!instance)return; //parent can be null
+        this[p.name] = instance;
+        await instance.eagerLoad(p.opt);
+      })
+    );
 
     const props = [];
     this.constructor.hasMany.forEach( x =>{
       const k = x[0];
 
-      if(allowClasses && !allowClasses.has(x[1]))return
+      if(allowClasses && !allowClasses.has(x[1]))return;
 
       const Model = ORM.require(x[1]);
       const name = Model.tableName;
       const opt = option[name];
       if(!opt)return;
-      props.push(async () => ({ "name" : name, "instances": await this.children(k, Model), "opt": opt}));
+
+      props.push({ "name" : name, "opt": opt, "key" : k, "model" : Model});
     });
 
+    await Promise.all(
+      props.map(async p => {
+        const instance = await this.children(p.k, p.model);
+        if(!instance) return;
+        this[p.model.tableName] = instance;
+        await instance.eagerLoad(p.opt);
+      })
+    );
+
+    const siblings = [];
     this.constructor.belongsToMany.forEach(x => {
       if(allowClasses && !allowClasses.has(x))return;
 
@@ -168,18 +182,17 @@ class ORM extends Model{
       const name = Model.tableName;
       const opt = option[name];
       if (!opt) return;
-      props.push(async () => ({"name": name, "instances": await this.siblings(Model), "opt": opt}));
+      siblings.push({"name": name, "opt": opt, "model": Model});
     });
 
-    for(let i=0; i< props.length; i++){
-      const x = await props[i]();
-      this[x.name] = x.instances;
-
-      for(let j=0 ; j< x.instances.length; j++){
-        const ins = x.instances[j];
-        await ins.eagerLoad(x.opt);
-      }
-    }
+    await Promise.all(
+      siblings.map(async s => {
+        const instance = await this.siblings(s.model);
+        if(!instance)return;
+        this[s.model.tableName] = instance;
+        await instance.eagerLoad(s.opt);
+      })
+    );
   }
 
   /**

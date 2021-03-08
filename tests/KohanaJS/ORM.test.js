@@ -276,12 +276,25 @@ describe('orm test', ()=>{
       person:{
         with:['Address'],
         addresses: {
-          with: null
+          with: ['Person'],
+          person : {with: null}
         }
       }
     });
 
+    console.log(a);
+
     expect(a.person.id).toBe(2);
+
+    const Person = ORM.require('Person');
+    const person = await ORM.factory(Person, 2);
+
+    await person.eagerLoad({
+      with: ['Address'],
+      addresses : {with: null}
+    })
+
+    console.log(person)
 
     const Product = ORM.require('Product');
     const p = await ORM.factory(Product, 22);
