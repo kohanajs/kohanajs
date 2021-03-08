@@ -32,7 +32,7 @@ class KohanaJS{
   static #configs = new Set();
   static #configSources = new Map();
 
-  static VERSION  = '2.0.0';
+  static VERSION  = '4.0.7';
   static SYS_PATH = __dirname;
   static EXE_PATH = KohanaJS.SYS_PATH;
   static APP_PATH = KohanaJS.SYS_PATH;
@@ -60,7 +60,6 @@ class KohanaJS{
     KohanaJS.initConfig(new Map([
       ['classes', require('./config/classes')],
       ['view', require('./config/view')],
-      ['database', require('./config/database')]
     ]));
     KohanaJS.#reloadModuleInit();
 

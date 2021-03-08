@@ -32,7 +32,7 @@ class ControllerMixinDatabase extends ControllerMixin{
     const key = hash.digest('hex');
 
     const conn = ControllerMixinDatabase.#dbConnection.get(key);
-    if(conn && KohanaJS.config.database?.cache)return conn;
+    if(conn)return conn;
 
     const connections = new Map();
     databaseMap.forEach((v, k) => {
