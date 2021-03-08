@@ -170,19 +170,32 @@ describe('KohanaJS test', ()=>{
       kohanaJS.init(EXE_PATH);
       kohanaJS.configForceUpdate = true;
       kohanaJS.addConfigFile('salt');
-      kohanaJS.updateConfig();
+      try{
+          kohanaJS.updateConfig();
+      }catch(e){
+      }
+
       expect(kohanaJS.config.salt).toBe(undefined);
 
-
-      fs.copyFileSync(APP_PATH+'/config/salt.default.js', APP_PATH+'/config/salt.js');
+      fs.copyFileSync(path.normalize(APP_PATH+'/config/salt.default.js'), path.normalize(APP_PATH+'/config/salt.js'));
       jest.resetModules();
       kohanaJS.updateConfig();
       expect(kohanaJS.config.salt.value).toBe('default salt 1');
 
       fs.unlinkSync(APP_PATH+'/config/salt.js');
       jest.resetModules();
-      kohanaJS.updateConfig();
-      kohanaJS.flushCache();
+      try{
+          kohanaJS.updateConfig();
+      }catch(e){
+
+      }
+
+      try{
+          kohanaJS.flushCache();
+      }catch(e){
+
+      }
+
       expect(kohanaJS.config.salt).toBe(undefined);
 
     /*

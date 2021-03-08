@@ -99,7 +99,7 @@ describe('Controller Mixin View Test', function () {
     expect(errorTemplate.data.content).toBe('error');
 
     const result = await c.execute('test');
-    expect(result.body).toBe(`{"header":"head","footer":"foot","main":"{\\"content\\":\\"error\\",\\"body\\":\\"<pre>500 / error throw</pre>\\"}"}`)
+    expect(result.body).toBe(`{"header":"head","footer":"foot","main":"{\\"content\\":\\"error\\",\\"body\\":\\"<script>setTimeout(function (){window.location = window.location.href;}, Math.random()*1000+1000);console.log(\\\\\\"error%20throw\\\\\\")</script>\\\"}\"}`)
   })
 
   test('errorWithoutTemplate', async ()=>{
@@ -118,7 +118,7 @@ describe('Controller Mixin View Test', function () {
     Object.assign(c.get('layout').data, {header: 'head', footer: 'foot'});
 
     const result = await c.execute('test');
-    expect(result.body).toBe(`{"header":"head","footer":"foot","main":"<pre>500 / error throw</pre>"}`)
+    expect(result.body).toBe(`{"header":"head","footer":"foot","main":"<script>setTimeout(function (){window.location = window.location.href;}, Math.random()*1000+1000);console.log(\\"error%20throw\\")</script>\"}`)
 //    const v = c.getView('')
 //    expect(await v.render()).toBe('{}');
   })

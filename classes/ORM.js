@@ -118,8 +118,7 @@ class ORM extends Model{
     * type:{}
     * vendor:{}
     * variants:{
-    *  children:true,
-    *  siblings:true,
+    *  with:['Inventory', 'Media],
     *  inventories :{}
     *  media: {}
     * },
@@ -167,10 +166,13 @@ class ORM extends Model{
 
     await Promise.all(
       props.map(async p => {
-        const instance = await this.children(p.k, p.model);
-        if(!instance) return;
-        this[p.model.tableName] = instance;
-        await instance.eagerLoad(p.opt);
+        const instances = await this.children(p.k, p.model);
+        if(!instances) return;
+        this[p.model.tableName] = instances;
+
+        await Promise.all(
+          instances.map(instance => instance.eagerLoad(p.opt))
+        );
       })
     );
 
@@ -187,10 +189,13 @@ class ORM extends Model{
 
     await Promise.all(
       siblings.map(async s => {
-        const instance = await this.siblings(s.model);
-        if(!instance)return;
-        this[s.model.tableName] = instance;
-        await instance.eagerLoad(s.opt);
+        const instances = await this.siblings(s.model);
+        if(!instances)return;
+        this[s.model.tableName] = instances;
+
+        await Promise.all(
+            instances.map(instance => instance.eagerLoad(s.opt))
+        );
       })
     );
   }

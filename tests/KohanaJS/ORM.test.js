@@ -271,6 +271,7 @@ describe('orm test', ()=>{
 
     const a = await ORM.factory(Address, 11);
     expect(a.person).toBe(undefined);
+
     await a.eagerLoad({
       with: ['Person'],
       person:{
@@ -282,8 +283,6 @@ describe('orm test', ()=>{
       }
     });
 
-    console.log(a);
-
     expect(a.person.id).toBe(2);
 
     const Person = ORM.require('Person');
@@ -293,8 +292,6 @@ describe('orm test', ()=>{
       with: ['Address'],
       addresses : {with: null}
     })
-
-    console.log(person)
 
     const Product = ORM.require('Product');
     const p = await ORM.factory(Product, 22);
