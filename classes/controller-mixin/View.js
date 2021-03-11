@@ -23,10 +23,14 @@ class ControllerMixinView extends ControllerMixin{
   }
 
   static async after(state){
+    const client = state.get('client');
+    if(client.headers && client.headers['Content-Type'] === 'application/json; charset=utf-8'){
+      client.body = JSON.stringify(client.body);
+      return;
+    }
     //render template and put into layout's main output.
     //no template, replace the controller body string into layout.
     const template = state.get(this.TEMPLATE);
-    const client = state.get('client');
     const layout = state.get(this.LAYOUT);
     layout.data[state.get(this.PLACEHOLDER)] = template ? await template.render() : client.body;
     client.body = await layout.render();
@@ -35,11 +39,15 @@ class ControllerMixinView extends ControllerMixin{
   static async exit(state){
     const client = state.get('client');
     const code = client.status;
+    if(code === 302) return;
+    if(client.header['Content-Type'] === 'application/json; charset=utf-8'){
+      client.body = JSON.stringify(client.body);
+      return;
+    }
     const errorTemplate = state.get(this.ERROR_TEMPLATE);
     const layout = state.get(this.LAYOUT);
     const placeHolder = state.get(this.PLACEHOLDER);
 
-    if(code === 302) return;
     if(errorTemplate){
       Object.assign(errorTemplate.data, {body: client.body});
       layout.data[placeHolder] = await errorTemplate.render();
