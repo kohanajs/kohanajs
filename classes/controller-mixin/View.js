@@ -40,7 +40,7 @@ class ControllerMixinView extends ControllerMixin{
     const client = state.get('client');
     const code = client.status;
     if(code === 302) return;
-    if(client.headers && client.header['Content-Type'] === 'application/json; charset=utf-8'){
+    if(client.headers && client.headers['Content-Type'] === 'application/json; charset=utf-8'){
       client.body = JSON.stringify(client.body);
       return;
     }
