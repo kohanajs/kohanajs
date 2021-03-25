@@ -166,7 +166,7 @@ class ORM extends Model{
 
     await Promise.all(
       props.map(async p => {
-        const instances = await this.children(p.k, p.model);
+        const instances = await this.children(p.key, p.model);
         if(!instances) return;
         this[p.model.tableName] = instances;
 
