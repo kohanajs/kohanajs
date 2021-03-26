@@ -28,6 +28,12 @@ class ControllerMixinView extends ControllerMixin{
       client.body = JSON.stringify(client.body);
       return;
     }
+
+    //guard non html content
+    if(client.headers && /^text\/html/i.test(client.headers['Content-Type']) === false){
+      return client.body;
+    }
+
     //render template and put into layout's main output.
     //no template, replace the controller body string into layout.
     const template = state.get(this.TEMPLATE);
