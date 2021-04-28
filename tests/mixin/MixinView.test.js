@@ -14,9 +14,9 @@ describe('Controller Mixin View Test', function () {
     expect(typeof c.getView).toBe('function');
     expect(typeof c.setTemplate).toBe('function');
     expect(typeof c.setErrorTemplate).toBe('function');
-    expect(typeof c.get('template')).toBe('undefined');
-    expect(typeof c.get('errorTemplate')).toBe('undefined');
-    expect(typeof c.get('layout')).toBe('object');
+    expect(typeof c.state.get(ControllerMixinView.TEMPLATE)).toBe('undefined');
+    expect(typeof c.state.get(ControllerMixinView.ERROR_TEMPLATE)).toBe('undefined');
+    expect(typeof c.state.get(ControllerMixinView.LAYOUT)).toBe('object');
   });
 
   test('execute', async ()=>{
@@ -27,8 +27,10 @@ describe('Controller Mixin View Test', function () {
       }
     }
     const c = new C({});
+    c.headers['Content-Type'] = "text/html";
 
-    Object.assign(c.get('layout').data, {header: 'head', footer: 'foot'});
+    Object.assign(c.state.get(ControllerMixinView.LAYOUT).data, {header: 'head', footer: 'foot'});
+
     const r = await c.execute();
     expect(r.body).toBe('{"header":"head","footer":"foot","main":""}');
   });
@@ -41,8 +43,9 @@ describe('Controller Mixin View Test', function () {
       }
     }
     const c = new C({});
+    c.headers['Content-Type'] = "text/html";
 
-    Object.assign(c.get('layout').data, {header: 'head', footer: 'foot'});
+    Object.assign(c.state.get('layout').data, {header: 'head', footer: 'foot'});
     c.setTemplate('', {content: 'hello'})
 
     expect(c.get('template').data.content).toBe('hello');
@@ -61,6 +64,8 @@ describe('Controller Mixin View Test', function () {
       }
     }
     const c = new C({});
+    c.headers['Content-Type'] = "text/html";
+
     const v = c.getView('', {content: 'hello'})
     expect(v.data.content).toBe('hello');
   });
@@ -87,6 +92,7 @@ describe('Controller Mixin View Test', function () {
       }
     }
     const c = new C({});
+    c.headers['Content-Type'] = "text/html";
 
     c.action_test = async () =>{
       throw new Error('error throw');
@@ -99,7 +105,7 @@ describe('Controller Mixin View Test', function () {
     expect(errorTemplate.data.content).toBe('error');
 
     const result = await c.execute('test');
-    expect(result.body).toBe(`{"header":"head","footer":"foot","main":"{\\"content\\":\\"error\\",\\"body\\":\\"<script>setTimeout(function (){window.location = window.location.href;}, Math.random()*1000+1000);console.log(\\\\\\"error%20throw\\\\\\")</script>\\\"}\"}`)
+    expect(result.body).toBe(`{"header":"head","footer":"foot","main":"{\\"content\\":\\"error\\",\\"body\\":\\"error throw\\\"}\"}`)
   })
 
   test('errorWithoutTemplate', async ()=>{
@@ -118,7 +124,7 @@ describe('Controller Mixin View Test', function () {
     Object.assign(c.get('layout').data, {header: 'head', footer: 'foot'});
 
     const result = await c.execute('test');
-    expect(result.body).toBe(`{"header":"head","footer":"foot","main":"<script>setTimeout(function (){window.location = window.location.href;}, Math.random()*1000+1000);console.log(\\"error%20throw\\")</script>\"}`)
+    expect(result.body).toBe(`{"header":"head","footer":"foot","main":"error throw"}`)
 //    const v = c.getView('')
 //    expect(await v.render()).toBe('{}');
   })
@@ -131,6 +137,7 @@ describe('Controller Mixin View Test', function () {
       }
     }
     const c = new C({});
+    c.headers['Content-Type'] = "text/html";
     c.setLayout('layout', {"foo": "bar"});
 
     Object.assign(c.get('layout').data, {header: 'head', footer: 'foot'});
@@ -152,6 +159,7 @@ describe('Controller Mixin View Test', function () {
       }
     }
     const c = new C({});
+    c.headers['Content-Type'] = "text/html";
 
     c.setLayout('layout', {"hello": "world"});
     c.setTemplate('tpl', {"content" : "wow"});
