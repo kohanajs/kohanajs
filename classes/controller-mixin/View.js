@@ -13,13 +13,17 @@ class ControllerMixinView extends ControllerMixin{
     if(!state.get(this.LAYOUT_FILE))state.set(this.LAYOUT_FILE, 'layout/default');
     if(!state.get(this.PLACEHOLDER))state.set(this.PLACEHOLDER, 'main');
     if(!state.get(this.VIEW_CLASS))state.set(this.VIEW_CLASS, View.defaultViewClass);
-    if(!state.get(this.LAYOUT))state.set(this.LAYOUT, ControllerMixinView.getView(state.get(this.LAYOUT_FILE), {}, state.get(this.THEME_PATH), state.get(this.VIEW_CLASS)))
+    if(!state.get(this.LAYOUT))state.set(this.LAYOUT, this.getView(state.get(this.LAYOUT_FILE), {}, state.get(this.THEME_PATH), state.get(this.VIEW_CLASS)))
 
     const client = state.get('client');
-    client.getView          = (file, data= {}) => ControllerMixinView.getView(file, data, state.get(this.THEME_PATH), state.get(this.VIEW_CLASS));
-    client.setTemplate      = (file, data= {}) => state.set(this.TEMPLATE,      (typeof file === 'string') ? ControllerMixinView.getView(file, data, state.get(this.THEME_PATH), state.get(this.VIEW_CLASS)) : file);
-    client.setLayout        = (file, data= {}) => state.set(this.LAYOUT,        (typeof file === 'string') ? ControllerMixinView.getView(file, data, state.get(this.THEME_PATH), state.get(this.VIEW_CLASS)) : file);
-    client.setErrorTemplate = (file, data= {}) => state.set(this.ERROR_TEMPLATE, (typeof file === 'string') ? ControllerMixinView.getView(file, data, state.get(this.THEME_PATH), state.get(this.VIEW_CLASS)) : file);
+    const defaultViewData = {
+      language: client.language
+    };
+
+    client.getView          = (file, data= {}) => this.getView(file, data, state.get(this.THEME_PATH), state.get(this.VIEW_CLASS));
+    client.setTemplate      = (file, data= {}) => state.set(this.TEMPLATE,       (typeof file === 'string') ? this.getView(file, Object.assign(data, defaultViewData), state.get(this.THEME_PATH), state.get(this.VIEW_CLASS)) : file);
+    client.setLayout        = (file, data= {}) => state.set(this.LAYOUT,         (typeof file === 'string') ? this.getView(file, Object.assign(data, defaultViewData), state.get(this.THEME_PATH), state.get(this.VIEW_CLASS)) : file);
+    client.setErrorTemplate = (file, data= {}) => state.set(this.ERROR_TEMPLATE, (typeof file === 'string') ? this.getView(file, Object.assign(data, defaultViewData), state.get(this.THEME_PATH), state.get(this.VIEW_CLASS)) : file);
   }
 
   static async after(state){

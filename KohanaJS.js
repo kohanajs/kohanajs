@@ -32,7 +32,7 @@ class KohanaJS{
   static #configs = new Set();
   static #configSources = new Map();
 
-  static VERSION  = '4.3.0';
+  static VERSION  = '4.4.0';
   static SYS_PATH = __dirname;
   static EXE_PATH = KohanaJS.SYS_PATH;
   static APP_PATH = KohanaJS.SYS_PATH;
