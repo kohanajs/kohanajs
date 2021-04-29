@@ -34,7 +34,7 @@ class ControllerMixinView extends ControllerMixin{
     }
 
     //guard non html content
-    if(client.headers && /^text\/html/i.test(client.headers['Content-Type']) === false){
+    if(client.headers && client.headers['Content-Type'] && /^text\/html/i.test(client.headers['Content-Type']) === false){
       return client.body;
     }
 
