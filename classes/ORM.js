@@ -22,9 +22,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
  */
-const pluralize = require('pluralize');
-pluralize.addPluralRule('person', 'persons');
-
 const KohanaJS = require('../KohanaJS');
 const {Model} = require('@kohanajs/core-mvc');
 
@@ -47,16 +44,8 @@ class ORM extends Model{
   created_at = null;
   updated_at = null;
 
-  #generateMissingTableName(){
-    if(this.constructor === ORM || this.constructor.tableName || this.constructor.joinTablePrefix)return;
-    this.constructor.tableName = pluralize(this.constructor.name).toLowerCase();
-    this.constructor.joinTablePrefix = pluralize.singular(this.constructor.tableName);
-   }
-
   constructor(id = null, options = {}){
     super();
-    //auto generate table name
-    this.#generateMissingTableName();
 
     //ORM may use
     //private property this.database.

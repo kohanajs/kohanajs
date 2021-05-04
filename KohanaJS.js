@@ -32,7 +32,7 @@ class KohanaJS{
   static #configs = new Set();
   static #configSources = new Map();
 
-  static VERSION  = '4.4.0';
+  static VERSION  = '4.4.2';
   static SYS_PATH = __dirname;
   static EXE_PATH = KohanaJS.SYS_PATH;
   static APP_PATH = KohanaJS.SYS_PATH;
@@ -204,11 +204,13 @@ class KohanaJS{
   };
 
   static #clearRequireCache(){
-    KohanaJS.classPath.forEach(v =>{
-      delete require.cache[path.normalize(v)];
+    KohanaJS.classPath.forEach((v, k) =>{
+      if(typeof v === 'string'){
+        delete require.cache[path.normalize(v)];
+        KohanaJS.classPath.delete(k);
+      }
     })
 
-    KohanaJS.classPath = new Map();
     KohanaJS.configPath = new Map();
   };
 

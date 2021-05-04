@@ -26,28 +26,6 @@ describe('orm test', ()=>{
         //ORM is abstract class, should not found lowercase and tableName
     });
 
-    test('extends ORM', ()=>{
-        const TestModel = require('./orm/application/classes/TestModel');
-        expect(TestModel.tableName).toBe(null); //table name is null before instantiate
-        new TestModel();
-
-        expect(TestModel.tableName).toBe('testmodels');
-    });
-
-    test('ORM test adapter', async ()=>{
-
-        const TestModel = require('./orm/application/classes/TestModel');
-
-        const m = await new TestModel( 1).read();
-        const m2 = await new TestModel(2).read();
-
-        expect(TestModel.tableName).toBe('testmodels');
-
-        expect(m.created_at).toBe(1);
-        expect(m2.created_at).toBe(2);
-
-    });
-
     test('alias model', async ()=>{
         const AliasModel = require('./orm/application/classes/AliasModel');
         expect(AliasModel.tableName).toBe('testmodels');
