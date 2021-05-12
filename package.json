@@ -1,6 +1,6 @@
 {
   "name": "kohanajs",
-  "version": "4.4.2",
+  "version": "5.0.0",
   "description": "Node.js MVC framework base on PHP Kohana Framework",
   "main": "index.js",
   "scripts": {
@@ -17,9 +17,9 @@
   },
   "homepage": "https://gitlab.com/kohanajs/kohanajs.git",
   "dependencies": {
-    "mime": "^2.5.2",
-    "@kohanajs/core-mvc": "^2.3.0",
-    "uuid" : "^8.3.2"
+    "@kohanajs/core-mvc": "^3.0.0",
+    "uuid" : "^8.3.2",
+    "mime": "^2.5.2"
   },
   "devDependencies": {
     "jest": "^26.6.3"

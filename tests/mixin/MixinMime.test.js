@@ -1,12 +1,7 @@
 const {Controller} = require('@kohanajs/core-mvc');
 const ControllerMixinMime = require('../../classes/controller-mixin/Mime');
 
-class C extends Controller{
-  constructor(request){
-    super(request);
-    C.mix(this, [ControllerMixinMime]);
-  }
-}
+class C extends Controller.mixin([ControllerMixinMime]){}
 
 describe('ControllerMime test', ()=>{
   test('constructor', async ()=>{

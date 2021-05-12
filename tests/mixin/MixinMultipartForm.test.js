@@ -4,11 +4,10 @@ const ControllerMixinMultipartForm = require('../../classes/controller-mixin/Mul
 
 describe('Controller Mixin Multipart Form test', ()=>{
   test('constructor', async ()=>{
-    class C extends Controller{
+    class C extends Controller.mixin([ControllerMixinMultipartForm]){
       constructor(request) {
-        super(request, false);
-        C.mix(this, [ControllerMixinMultipartForm]);
-        this.state.set('tempFolder', path.normalize(__dirname + '/temp'))
+        super(request);
+        this.state.set(ControllerMixinMultipartForm.TEMP_FOLDER, path.normalize(__dirname + '/temp'));
       }
     }
 
