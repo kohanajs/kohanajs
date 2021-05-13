@@ -3,6 +3,6 @@
 
 module.exports = {
   modules: [
-    //place modules name here.
+    // place modules name here.
   ],
 };
