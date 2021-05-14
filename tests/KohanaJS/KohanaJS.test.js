@@ -169,9 +169,8 @@ describe('KohanaJS test', () => {
     }
 
     kohanaJS.configForceUpdate = true;
-    kohanaJS.addConfigFile('salt');
     try {
-      kohanaJS.updateConfig();
+      kohanaJS.initConfig(new Map([['salt', '']]));
     } catch (e) {
       expect(e.message).toBe('KohanaJS resolve path error: path salt.js not found. config , {} ');
     }
@@ -180,16 +179,11 @@ describe('KohanaJS test', () => {
 
     fs.copyFileSync(path.normalize(`${kohanaJS.APP_PATH}/config/salt.default.js`), path.normalize(`${kohanaJS.APP_PATH}/config/salt.js`));
     jest.resetModules();
-    kohanaJS.updateConfig();
+    kohanaJS.flushCache();
     expect(kohanaJS.config.salt.value).toBe('default salt 1');
 
     fs.unlinkSync(`${kohanaJS.APP_PATH}/config/salt.js`);
     jest.resetModules();
-    try {
-      kohanaJS.updateConfig();
-    } catch (e) {
-      expect(e.message).toBe('KohanaJS resolve path error: path salt.js not found. config , {} ');
-    }
 
     try {
       kohanaJS.flushCache();
@@ -198,16 +192,6 @@ describe('KohanaJS test', () => {
     }
 
     expect(kohanaJS.config.salt).toBe(undefined);
-
-    /*
-      fs.copyFileSync(APP_PATH+'/config/salt.default2.js', APP_PATH+'/config/salt.js');
-      jest.resetModules();
-      kohanaJS.validateCache();
-      console.log(kohanaJS.config)
-      expect(kohanaJS.config.salt).toBe('default salt 2'); */
-
-    // clean up
-    //      fs.unlinkSync(path.normalize(APP_PATH+'/config/site.js'));
   });
 
   test('setPath default value', () => {

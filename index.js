@@ -23,14 +23,9 @@ SOFTWARE.
 
 */
 
-const core = require('@kohanajs/core-mvc');
 const KohanaJS = require('./KohanaJS');
 
 module.exports = {
-  Model: core.Model,
-  View: core.View,
-  Controller: core.Controller,
-  ControllerMixin: core.ControllerMixin,
   KohanaJS,
   addNodeModule: KohanaJS.addNodeModule,
   init: KohanaJS.init,

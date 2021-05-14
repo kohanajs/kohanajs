@@ -1,3 +1,4 @@
+const mime = require('mime');
 const { ControllerMixin, View } = require('@kohanajs/core-mvc');
 
 class ControllerMixinView extends ControllerMixin {
@@ -19,37 +20,39 @@ class ControllerMixinView extends ControllerMixin {
     if (!state.get(this.LAYOUT_FILE))state.set(this.LAYOUT_FILE, 'layout/default');
     if (!state.get(this.PLACEHOLDER))state.set(this.PLACEHOLDER, 'main');
     if (!state.get(this.VIEW_CLASS))state.set(this.VIEW_CLASS, View.DefaultViewClass);
-    if (!state.get(this.LAYOUT))state.set(this.LAYOUT, this.getView(state.get(this.LAYOUT_FILE), {}, state.get(this.THEME_PATH), state.get(this.VIEW_CLASS)));
+    if (!state.get(this.LAYOUT))state.set(this.LAYOUT, this.#getView(state.get(this.LAYOUT_FILE), {}, state.get(this.THEME_PATH), state.get(this.VIEW_CLASS)));
 
     const client = state.get('client');
     const defaultViewData = {
       language: client.language,
     };
 
-    client.getView = (file, data = {}) => this.getView(file, data, state.get(this.THEME_PATH), state.get(this.VIEW_CLASS));
+    client.getView = (file, data = {}) => this.#getView(file, data, state.get(this.THEME_PATH), state.get(this.VIEW_CLASS));
 
     client.setTemplate = (file, data = {}) => state.set(this.TEMPLATE, (typeof file === 'string')
-      ? this.getView(file, Object.assign(data, defaultViewData), state.get(this.THEME_PATH), state.get(this.VIEW_CLASS))
+      ? this.#getView(file, Object.assign(data, defaultViewData), state.get(this.THEME_PATH), state.get(this.VIEW_CLASS))
       : file);
 
     client.setLayout = (file, data = {}) => state.set(this.LAYOUT, (typeof file === 'string')
-      ? this.getView(file, Object.assign(data, defaultViewData), state.get(this.THEME_PATH), state.get(this.VIEW_CLASS))
+      ? this.#getView(file, Object.assign(data, defaultViewData), state.get(this.THEME_PATH), state.get(this.VIEW_CLASS))
       : file);
 
     client.setErrorTemplate = (file, data = {}) => state.set(this.ERROR_TEMPLATE, (typeof file === 'string')
-      ? this.getView(file, Object.assign(data, defaultViewData), state.get(this.THEME_PATH), state.get(this.VIEW_CLASS))
+      ? this.#getView(file, Object.assign(data, defaultViewData), state.get(this.THEME_PATH), state.get(this.VIEW_CLASS))
       : file);
   }
 
   static async after(state) {
     const client = state.get('client');
-    if (client.headers && client.headers['Content-Type'] === 'application/json; charset=utf-8') {
+
+    // .json return json content;
+    if (/^application\/json/.test(client.headers['Content-Type'])) {
       client.body = JSON.stringify(client.body);
       return;
     }
 
-    // guard non html content
-    if (client.headers && client.headers['Content-Type'] && /^text\/html/i.test(client.headers['Content-Type']) === false) {
+    // do not render non text content, eg, no need to render when controller read protected pdf
+    if (/^text/.test(client.headers['Content-Type']) === false) {
       return;
     }
 
@@ -82,7 +85,7 @@ class ControllerMixinView extends ControllerMixin {
     client.body = await layout.render();
   }
 
-  static getView(path, data, themePath, ViewClass) {
+  static #getView(path, data, themePath, ViewClass) {
     return new ViewClass(path, data, themePath);
   }
 }

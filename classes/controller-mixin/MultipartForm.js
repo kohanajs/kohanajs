@@ -69,9 +69,11 @@ class MultipartForm extends ControllerMixin {
     if (!state.get(this.TEMP_FOLDER))state.set(this.TEMP_FOLDER, path.normalize(`${KohanaJS.EXE_PATH}/tmp`));
   }
 
-  static async before(state) {
+  static async setup(state) {
     const { request } = state.get(ControllerMixin.CLIENT);
     if (!request.body && !request.multipart) return;
+
+    const getData = request.query || {};
 
     const postData = (typeof request.body === 'object')
       ? ({ ...request.body })
@@ -81,8 +83,8 @@ class MultipartForm extends ControllerMixin {
       await HelperForm.parseMultipartForm(request, postData, state.get(this.TEMP_FOLDER));
     }
     state.set(this.POST_DATA, postData);
-    state.set(this.GET_DATA, request.query);
-    state.set(this.REQUEST_DATA, { ...postData, ...request.query });
+    state.set(this.GET_DATA, getData);
+    state.set(this.REQUEST_DATA, { ...postData, ...getData });
   }
 }
 

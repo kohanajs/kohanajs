@@ -112,8 +112,10 @@ class KohanaJS {
    */
   static initConfig(configMap) {
     configMap.forEach((v, k) => {
-      KohanaJS.#configs.add(k);
-      KohanaJS.#configSources.set(k, v);
+      this.#configs.add(k);
+
+      const existConfigSource = KohanaJS.#configSources.get(k);
+      if (v) KohanaJS.#configSources.set(k, { ...existConfigSource, ...v });
     });
 
     KohanaJS.#updateConfig();
@@ -155,18 +157,6 @@ class KohanaJS {
       require(initPath);
       delete require.cache[filePath];
     });
-  }
-
-  /**
-   *
-   * @param {string} name config file name without extension
-   */
-  static addConfigFile(name) {
-    KohanaJS.#configs.add(name);
-  }
-
-  static updateConfig() {
-    KohanaJS.#updateConfig();
   }
 
   static addNodeModule(dirname) {

@@ -135,4 +135,23 @@ describe('Controller Mixin View Test', () => {
     const r3 = await c.execute();
     expect(r3.body).toBe('{"hello":"world","main":"{\\"content\\":\\"wow\\"}"}');
   });
+
+  test('render json', async () => {
+    class C extends Controller.mixin([ControllerMixinView]) {
+      async action_test() {
+        this.body = {
+          foo: 'bar',
+        };
+      }
+    }
+    const c = new C({});
+    c.headers['Content-Type'] = 'application/json';
+    await c.execute('test');
+    expect(c.body).toBe('{"foo":"bar"}');
+
+    const c2 = new C({});
+    c2.headers['Content-Type'] = 'application/json; charset=utf-8';
+    await c.execute('test');
+    expect(c.body).toBe('{"foo":"bar"}');
+  });
 });
