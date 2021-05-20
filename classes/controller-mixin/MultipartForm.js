@@ -2,7 +2,7 @@ const { ControllerMixin } = require('@kohanajs/core-mvc');
 
 const querystring = require('querystring');
 const fs = require('fs');
-const { v1: uuid } = require('uuid');
+const { randomUUID } = require('crypto');
 const path = require('path');
 const KohanaJS = require('../../KohanaJS');
 
@@ -26,7 +26,7 @@ class HelperForm {
       });
 
       mp.on('file', (fieldname, file, filename, encoding, mimetype) => {
-        const filePath = `${tempFolder}/${uuid()}`;
+        const filePath = `${tempFolder}/${randomUUID()}`;
         file.pipe(fs.createWriteStream(filePath));
 
         file.on('data', data => {});

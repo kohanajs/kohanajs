@@ -28,6 +28,7 @@ class ControllerMixinDatabase extends ControllerMixin {
    *
    * @param {Map} databaseMap
    * @param {DatabaseDriver.} driverClass
+   * @returns {Map}
    */
   static #getConnections(databaseMap, driverClass) {
     const hash = crypto.createHash('sha256');

@@ -1,3 +1,5 @@
+const { randomUUID } = require('crypto');
+
 class ORMAdapter {
   static OP = {
     EQUAL: '=',
@@ -36,12 +38,15 @@ class ORMAdapter {
     return (Math.floor((Date.now() - 1563741060000) / 1000)) * 100000 + ((Math.random() * 100000) & 65535);
   }
 
-  processValues() {
-    return this.translateValue(this.client.columns.map(x => this.client[x]));
+  static uuid() {
+    return randomUUID({ disableEntropyCache: true });
   }
 
-  // eslint-disable-next-line class-methods-use-this
-  translateValue(values) {
+  processValues() {
+    return this.constructor.translateValue(this.client.columns.map(x => this.client[x]));
+  }
+
+  static translateValue(values) {
     return values;
   }
 

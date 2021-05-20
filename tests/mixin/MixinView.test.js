@@ -18,7 +18,6 @@ describe('Controller Mixin View Test', () => {
     class C extends Controller.mixin([ControllerMixinView]) {}
     const c = new C({});
     c.headers['Content-Type'] = 'text/html';
-
     Object.assign(c.state.get(ControllerMixinView.LAYOUT).data, { header: 'head', footer: 'foot' });
 
     const r = await c.execute();

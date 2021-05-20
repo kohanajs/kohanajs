@@ -2,8 +2,6 @@ const mime = require('mime');
 const { ControllerMixin, View } = require('@kohanajs/core-mvc');
 
 class ControllerMixinView extends ControllerMixin {
-  static LAYOUT_FILE = 'layoutFile';
-
   static PLACEHOLDER = 'placeHolder';
 
   static VIEW_CLASS = 'viewClass';
@@ -11,6 +9,8 @@ class ControllerMixinView extends ControllerMixin {
   static THEME_PATH = 'themePath';
 
   static LAYOUT = 'layout';
+
+  static LAYOUT_FILE = 'layoutPath';
 
   static TEMPLATE = 'template';
 
@@ -42,6 +42,13 @@ class ControllerMixinView extends ControllerMixin {
       : file);
   }
 
+  static async setup(state) {
+    const layoutView = state.get(this.LAYOUT);
+    if (state.get(this.LAYOUT_FILE) !== layoutView.file) {
+      state.set(this.LAYOUT, this.#getView(state.get(this.LAYOUT_FILE), layoutView.data, state.get(this.THEME_PATH), state.get(this.VIEW_CLASS)));
+    }
+  }
+
   static async after(state) {
     const client = state.get('client');
 
@@ -52,7 +59,7 @@ class ControllerMixinView extends ControllerMixin {
     }
 
     // do not render non text content, eg, no need to render when controller read protected pdf
-    if (/^text/.test(client.headers['Content-Type']) === false) {
+    if (client.headers['Content-Type'] && /^text/.test(client.headers['Content-Type']) === false) {
       return;
     }
 

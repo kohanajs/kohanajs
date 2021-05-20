@@ -23,7 +23,10 @@ class DatabaseDriver {
   async transaction(fn) {}
 
   // eslint-disable-next-line class-methods-use-this
-  async exec(sql) {}
+  async exec(sql) {
+    console.log('Database exec using Abstract DatabaseDriver');
+    console.log(sql);
+  }
 
   // eslint-disable-next-line class-methods-use-this
   async close() {}

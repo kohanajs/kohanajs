@@ -197,8 +197,9 @@ describe('orm test', () => {
     await a.insertAll([], [], []);
 
     Adapter.defaultID();
+    Adapter.uuid();
     a.processValues();
-    a.translateValue([]);
+    Adapter.translateValue([]);
     expect(true).toBe(true);
   });
 

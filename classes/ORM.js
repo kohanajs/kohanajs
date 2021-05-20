@@ -48,6 +48,8 @@ class ORM extends Model {
 
   static classPrefix = 'model/';
 
+  uuid = null;
+
   created_at = null;
 
   updated_at = null;
@@ -220,7 +222,8 @@ class ORM extends Model {
     if (this.id) {
       await this.adapter.update(this.adapter.processValues());
     } else {
-      this.id = this.options.insertID ?? ORM.defaultAdapter.defaultID() ?? ORMAdapter.defaultID();
+      this.id = this.options.insertID ?? this.adapter.constructor.defaultID() ?? ORMAdapter.defaultID();
+      this.uuid = this.adapter.constructor.uuid() ?? ORMAdapter.uuid();
       await this.adapter.insert(this.adapter.processValues());
     }
 
