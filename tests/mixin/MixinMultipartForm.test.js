@@ -20,4 +20,8 @@ describe('Controller Mixin Multipart Form test', () => {
       expect('should not run this').toBe('');
     }
   });
+
+  //  test('get data', async ()=>{})
+  //  test('post data', async ()=>{})
+  //  test('multipart data', async ()=>{})
 });

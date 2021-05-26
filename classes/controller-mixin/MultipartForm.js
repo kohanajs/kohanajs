@@ -41,7 +41,7 @@ class HelperForm {
         });
       });
 
-      mp.on('finish', () => { resolve(); });
+      mp.on('finish', () => { resolve(postData); });
     });
   }
 
@@ -73,18 +73,19 @@ class MultipartForm extends ControllerMixin {
     const { request } = state.get(ControllerMixin.CLIENT);
     if (!request.body && !request.multipart) return;
 
-    const getData = request.query || {};
+    state.set(this.GET_DATA, request.query || {});
 
     const postData = (typeof request.body === 'object')
       ? ({ ...request.body })
       : querystring.parse(request.body);
 
-    if (/^multipart\/form-data/.test(request.headers['content-type'])) {
-      await HelperForm.parseMultipartForm(request, postData, state.get(this.TEMP_FOLDER));
-    }
     state.set(this.POST_DATA, postData);
-    state.set(this.GET_DATA, getData);
-    state.set(this.REQUEST_DATA, { ...postData, ...getData });
+    if (/^multipart\/form-data/.test(request.headers['content-type'])) {
+      const multipart = await HelperForm.parseMultipartForm(request, postData, state.get(this.TEMP_FOLDER));
+      state.set(this.POST_DATA, multipart);
+    }
+
+    state.set(this.REQUEST_DATA, { ...state.get(this.POST_DATA), ...state.get(this.GET_DATA) });
   }
 }
 
