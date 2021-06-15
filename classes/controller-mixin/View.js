@@ -30,15 +30,15 @@ class ControllerMixinView extends ControllerMixin {
     client.getView = (file, data = {}) => this.#getView(file, data, state.get(this.THEME_PATH), state.get(this.VIEW_CLASS));
 
     client.setTemplate = (file, data = {}) => state.set(this.TEMPLATE, (typeof file === 'string')
-      ? this.#getView(file, Object.assign(data, defaultViewData), state.get(this.THEME_PATH), state.get(this.VIEW_CLASS))
+      ? this.#getView(file, Object.assign(defaultViewData, data), state.get(this.THEME_PATH), state.get(this.VIEW_CLASS))
       : file);
 
     client.setLayout = (file, data = {}) => state.set(this.LAYOUT, (typeof file === 'string')
-      ? this.#getView(file, Object.assign(data, defaultViewData), state.get(this.THEME_PATH), state.get(this.VIEW_CLASS))
+      ? this.#getView(file, Object.assign(defaultViewData, data), state.get(this.THEME_PATH), state.get(this.VIEW_CLASS))
       : file);
 
     client.setErrorTemplate = (file, data = {}) => state.set(this.ERROR_TEMPLATE, (typeof file === 'string')
-      ? this.#getView(file, Object.assign(data, defaultViewData), state.get(this.THEME_PATH), state.get(this.VIEW_CLASS))
+      ? this.#getView(file, Object.assign(defaultViewData, data), state.get(this.THEME_PATH), state.get(this.VIEW_CLASS))
       : file);
   }
 
