@@ -94,8 +94,8 @@ class KohanaJS {
   static #setPath(opts = {}) {
     KohanaJS.EXE_PATH = opts.EXE_PATH || __dirname;
     KohanaJS.APP_PATH = opts.APP_PATH || `${KohanaJS.EXE_PATH}/application`;
-    KohanaJS.MOD_PATH = opts.MOD_PATH || `${KohanaJS.EXE_PATH}/modules`;
-    KohanaJS.SYM_PATH = opts.SYM_PATH || `${KohanaJS.EXE_PATH}/system`;
+    KohanaJS.MOD_PATH = opts.MOD_PATH || `${KohanaJS.APP_PATH}/modules`;
+    KohanaJS.SYM_PATH = opts.SYM_PATH || `${KohanaJS.APP_PATH}/system`;
     KohanaJS.VIEW_PATH = opts.VIEW_PATH || `${KohanaJS.APP_PATH}/views`;
   }
 
