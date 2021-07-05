@@ -135,7 +135,6 @@ class ORM extends Model {
 
       const name = k.replace('_id', '');
       const opt = option[name];
-
       if (!opt) return;
       parents.push({ name, opt, key: k });
     });
@@ -143,8 +142,8 @@ class ORM extends Model {
     await Promise.all(
       parents.map(async p => {
         const instance = await this.parent(p.key);
-        if (!instance) return; // parent can be null
         this[p.name] = instance;
+        if (!instance) return; // parent can be null
         await instance.eagerLoad(p.opt);
       }),
     );

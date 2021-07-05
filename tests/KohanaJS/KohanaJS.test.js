@@ -15,7 +15,7 @@ describe('KohanaJS test', () => {
 
   test('kohanaJS.require', () => {
     const packagePath = `${__dirname}/test1/`;
-    kohanaJS.init({ EXE_PATH: packagePath });
+    kohanaJS.init({ EXE_PATH: packagePath, MOD_PATH: `${packagePath}/modules` });
 
     expect(kohanaJS.MOD_PATH).toBe(`${packagePath}/modules`);
 
@@ -26,7 +26,7 @@ describe('KohanaJS test', () => {
 
   test('switch package', () => {
     const testDir = __dirname;
-    kohanaJS.init({ EXE_PATH: `${testDir}/test1` });
+    kohanaJS.init({ EXE_PATH: `${testDir}/test1`, MOD_PATH: `${testDir}/test1/modules` });
     expect(kohanaJS.MOD_PATH).toBe(`${testDir}/test1/modules`);
 
     let T = kohanaJS.require('Test');
@@ -37,7 +37,7 @@ describe('KohanaJS test', () => {
     const f1 = new Foo1();
     expect(f1.getFoo()).toBe('fooo');
 
-    kohanaJS.init({ EXE_PATH: `${testDir}/test2` });
+    kohanaJS.init({ EXE_PATH: `${testDir}/test2`, MOD_PATH: `${testDir}/test2/modules` });
     expect(kohanaJS.MOD_PATH).toBe(`${testDir}/test2/modules`);
 
     T = kohanaJS.require('Test');
@@ -100,7 +100,7 @@ describe('KohanaJS test', () => {
   test('inline modules init', () => {
     const testDir = __dirname;
     expect(global.testInit).toBe(undefined);
-    kohanaJS.init({ EXE_PATH: `${testDir}/test4` });
+    kohanaJS.init({ EXE_PATH: `${testDir}/test4`, MOD_PATH: `${testDir}/test4/modules` });
     expect(global.testInit).toBe(true);
     delete global.testInit;
   });
@@ -217,7 +217,7 @@ describe('KohanaJS test', () => {
     });
     expect(kohanaJS.EXE_PATH).toBe(`${__dirname}/test1`);
     expect(kohanaJS.APP_PATH).toBe(`${__dirname}/test2/application`);
-    expect(kohanaJS.MOD_PATH).toBe(`${__dirname}/test1/modules`);
+    expect(kohanaJS.MOD_PATH).toBe(`${__dirname}/test2/application/modules`);
   });
 
   test('kohanaJS nodePackages without init', () => {
@@ -243,13 +243,13 @@ describe('KohanaJS test', () => {
       },
     );
 
-    expect(kohanaJS.SYM_PATH).toBe(`${__dirname}/test1/system`);
+    expect(kohanaJS.SYM_PATH).toBe(`${__dirname}/test2/application/system`);
   });
 
   test('inline system init', () => {
     const testDir = __dirname;
     expect(global.testInit2).toBe(undefined);
-    kohanaJS.init({ EXE_PATH: `${testDir}/test12` });
+    kohanaJS.init({ EXE_PATH: `${testDir}/test12`, SYM_PATH: `${testDir}/test12/system` });
     expect(global.testInit2).toBe(true);
     delete global.testInit2;
 
