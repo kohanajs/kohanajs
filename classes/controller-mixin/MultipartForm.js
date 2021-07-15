@@ -18,7 +18,7 @@ class HelperForm {
       mp.on('field', (key, value) => {
         if (/\[]$/.test(key)) {
           const k = key.replace('[]', '');
-          postData[k] = $_POST[k] || [];
+          postData[k] = $_POST[k] ?? [];
           postData[k].push(value);
         } else {
           postData[key] = value;
@@ -26,14 +26,16 @@ class HelperForm {
       });
 
       mp.on('file', (fieldname, file, filename, encoding, mimetype) => {
-        const filePath = `${tempFolder}/${randomUUID()}`;
+        const tmpName = randomUUID();
+        const filePath = path.normalize(`${tempFolder}/${tmpName}`);
         file.pipe(fs.createWriteStream(filePath));
 
         file.on('data', data => {});
 
         file.on('end', () => {
           postData[fieldname] = {
-            tmp: path,
+            tmp: filePath,
+            tmpName: tmpName,
             filename,
             encoding,
             mimetype,
