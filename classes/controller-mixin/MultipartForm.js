@@ -18,7 +18,7 @@ class HelperForm {
       mp.on('field', (key, value) => {
         if (/\[]$/.test(key)) {
           const k = key.replace('[]', '');
-          postData[k] = $_POST[k] ?? [];
+          postData[k] = postData[k] ?? [];
           postData[k].push(value);
         } else {
           postData[key] = value;
@@ -45,16 +45,6 @@ class HelperForm {
 
       mp.on('finish', () => { resolve(postData); });
     });
-  }
-
-  static getFieldValue(scope, fieldName, fieldType = '', value = null) {
-    return {
-      label: fieldName,
-      name: `${scope}:${fieldName}`,
-      type: fieldType.replace(/!$/, ''),
-      required: /!$/.test(fieldType),
-      value,
-    };
   }
 }
 
