@@ -240,8 +240,9 @@ describe('orm test', () => {
     p.snapshot();
     p.name = 'Charlie';
 
-    expect(p.states[0].name).toBe('Alice');
-    expect(p.states[1].name).toBe('Bob');
+    const states = p.getStates();
+    expect(states[0].name).toBe('Alice');
+    expect(states[1].name).toBe('Bob');
   });
 
   test('ORM Eager Load', async () => {

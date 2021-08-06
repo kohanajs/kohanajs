@@ -54,52 +54,48 @@ class ORM extends Model {
 
   updated_at = null;
 
+  #database = null;
+  #options = null;
+  #states = null;
+  #adapter = null;
+  #columns = null;
+
   constructor(id = null, options = {}) {
     super();
 
-    // ORM may use
-    // private property this.database.
-    Object.defineProperty(this, 'database', {
-      enumerable: false,
-      value: options.database || ORM.database,
-    });
-
-    // private property options
-    Object.defineProperty(this, 'options', {
-      enumerable: false,
-      value: options,
-    });
-
-    // private property options
-    Object.defineProperty(this, 'states', {
-      enumerable: false,
-      value: [],
-    });
+    this.#database = options.database || ORM.database;
+    this.#options = options;
+    this.#states = [];
 
     const Adapter = options.adapter || this.constructor.defaultAdapter;
-    const adapter = new Adapter(this, this.database);
-
-    // private property adapter
-    Object.defineProperty(this, 'adapter', {
-      enumerable: false,
-      value: adapter,
-    });
+    this.#adapter = new Adapter(this, this.#database);
 
     // list all columns of the model.
-    const columns = Array.from(this.constructor.fields.keys());
+    this.#columns = Array.from(this.constructor.fields.keys());
     // add belongsTo to columns
-    Array.from(this.constructor.belongsTo.keys()).forEach(x => columns.push(x));
-    // private property adapter
-    Object.defineProperty(this, 'columns', {
-      enumerable: false,
-      value: columns,
-    });
+    Array.from(this.constructor.belongsTo.keys()).forEach(x => this.#columns.push(x));
 
     this.id = id;
   }
 
+  /**
+   *
+   * @returns {Array}
+   */
+  getColumns(){
+    return this.#columns;
+  }
+
+  /**
+   *
+   * @returns {Array}
+   */
+  getStates(){
+    return this.#states;
+  }
+
   snapshot() {
-    this.states.push({ ...this });
+    this.#states.push({ ...this });
   }
 
   /**
@@ -219,11 +215,12 @@ class ORM extends Model {
    */
   async write() {
     if (this.id) {
-      await this.adapter.update(this.adapter.processValues());
+      await this.#adapter.update(this.#adapter.processValues());
     } else {
-      this.id = this.options.insertID ?? this.adapter.constructor.defaultID() ?? ORMAdapter.defaultID();
-      this.uuid = this.adapter.constructor.uuid() ?? ORMAdapter.uuid();
-      await this.adapter.insert(this.adapter.processValues());
+      const adapterClass = this.#adapter.constructor;
+      this.id = this.#options.insertID ?? adapterClass.defaultID() ?? ORMAdapter.defaultID();
+      this.uuid = adapterClass.uuid() ?? ORMAdapter.uuid();
+      await this.#adapter.insert(this.#adapter.processValues());
     }
 
     return this;
@@ -249,13 +246,13 @@ class ORM extends Model {
   }
 
   async #readByID() {
-    return this.adapter.read();
+    return this.#adapter.read();
   }
 
   async #readByValues() {
     const values = this.#getValues();
     if (values.size === 0) throw new Error(`${this.constructor.name}: No id and no value to read`);
-    const results = await this.adapter.readAll(values, 1);
+    const results = await this.#adapter.readAll(values, 1);
     return results[0];
   }
 
@@ -265,7 +262,7 @@ class ORM extends Model {
    */
   async delete() {
     if (!this.id) throw new Error('ORM delete Error, no id defined');
-    await this.adapter.delete();
+    await this.#adapter.delete();
   }
 
   // relation methods
@@ -291,7 +288,7 @@ class ORM extends Model {
 
     const modelName = this.constructor.belongsTo.get(fk);
     const ModelClass = ORM.require(modelName);
-    return ORM.factory(ModelClass, this[fk], { database: this.database });
+    return ORM.factory(ModelClass, this[fk], { database: this.#database });
   }
 
   /**
@@ -305,29 +302,30 @@ class ORM extends Model {
     if (modelNames.length > 1 && MClass === null) throw new Error('children fk have multiple Models, please specific which Model will be used');
     const ModelClass = MClass || ORM.require(modelNames[0][1]);
 
-    const results = await this.adapter.hasMany(ModelClass.tableName, fk);
-    return results.map(x => Object.assign(new ModelClass(null, { database: this.database }), x));
+    const results = await this.#adapter.hasMany(ModelClass.tableName, fk);
+    return results.map(x => Object.assign(new ModelClass(null, { database: this.#database }), x));
   }
 
   #siblingInfo(model) {
     const m = Array.isArray(model) ? model[0] : model;
+    const M = m.constructor;
     const lk = `${this.constructor.joinTablePrefix}_id`;
-    const fk = `${m.constructor.joinTablePrefix}_id`;
+    const fk = `${M.joinTablePrefix}_id`;
 
-    if (!this.constructor.belongsToMany.has(m.constructor.name)) {
-      if (!m.constructor.belongsToMany.has(this.constructor.name)) {
-        throw new Error(`${this.constructor.name} and ${m.constructor.name} not have many to many relationship`);
+    if (!this.constructor.belongsToMany.has(M.name)) {
+      if (!M.belongsToMany.has(this.constructor.name)) {
+        throw new Error(`${this.constructor.name} and ${M.name} not have many to many relationship`);
       }
 
       return {
-        joinTableName: `${m.constructor.joinTablePrefix}_${this.constructor.tableName}`,
+        joinTableName: `${M.joinTablePrefix}_${this.constructor.tableName}`,
         lk,
         fk,
       };
     }
 
     return {
-      joinTableName: `${this.constructor.joinTablePrefix}_${m.constructor.tableName}`,
+      joinTableName: `${this.constructor.joinTablePrefix}_${M.tableName}`,
       lk,
       fk,
     };
@@ -335,14 +333,14 @@ class ORM extends Model {
 
   /**
    * Get siblings
-   * @param {Function<ORM>} MClass
+   * @param {ORM.} MClass
    * @return {[]}
    */
   async siblings(MClass) {
     const { joinTableName, lk, fk } = this.#siblingInfo(ORM.create(MClass));
 
-    const results = await this.adapter.belongsToMany(MClass.tableName, joinTableName, lk, fk);
-    return results.map(x => Object.assign(ORM.create(MClass, { database: this.database }), x));
+    const results = await this.#adapter.belongsToMany(MClass.tableName, joinTableName, lk, fk);
+    return results.map(x => Object.assign(ORM.create(MClass, { database: this.#database }), x));
   }
 
   /**
@@ -358,7 +356,7 @@ class ORM extends Model {
     if (Array.isArray(model) && model.length <= 0) throw new Error('Error add model, model array cannot be empty');
 
     const { joinTableName, lk, fk } = this.#siblingInfo(model);
-    await this.adapter.add(Array.isArray(model) ? model : [model], weight, joinTableName, lk, fk);
+    await this.#adapter.add(Array.isArray(model) ? model : [model], weight, joinTableName, lk, fk);
   }
 
   /**
@@ -369,7 +367,7 @@ class ORM extends Model {
     if (!this.id) throw new Error(`Cannot remove ${model.constructor.name}. ${this.constructor.name} not have id`);
 
     const { joinTableName, lk, fk } = this.#siblingInfo(model);
-    await this.adapter.remove(Array.isArray(model) ? model : [model], joinTableName, lk, fk);
+    await this.#adapter.remove(Array.isArray(model) ? model : [model], joinTableName, lk, fk);
   }
 
   /**
@@ -381,7 +379,7 @@ class ORM extends Model {
     if (!this.id) throw new Error(`Cannot remove ${MClass.name}. ${this.constructor.name} not have id`);
 
     const { joinTableName, lk } = this.#siblingInfo(ORM.create(MClass));
-    await this.adapter.removeAll(joinTableName, lk);
+    await this.#adapter.removeAll(joinTableName, lk);
   }
 
   /**
@@ -411,10 +409,17 @@ class ORM extends Model {
     return m;
   }
 
+  static async #readResult(result, m, creator, asArray){
+    if (asArray) return result.map(creator);
+    if (result.length === 0) return null;
+    if (result.length === 1) return Object.assign(m, result[0]);
+    return result.map(creator);
+  }
+
   // Collection methods
   /**
    * read all records from the model
-   * @param {Function<ORM>} MClass
+   * @param {ORM.} MClass
    * @param {object} options
    * @param options.database
    * @param options.adapter
@@ -426,14 +431,10 @@ class ORM extends Model {
    * @returns {Promise<[]|object>}
    */
   static async readAll(MClass, options = {}) {
-    const opt = { database: ORM.database, ...options };
-    const m = ORM.create(MClass, opt);
-    const result = await m.adapter.readAll(opt.kv, opt.limit, opt.offset, opt.orderBy) || [];
+    const m = ORM.create(MClass, options);
+    const result = await m.#adapter.readAll(options.kv, options.limit, options.offset, options.orderBy) || [];
 
-    if (opt.asArray) return result.map(x => Object.assign(ORM.create(MClass, opt), x));
-    if (result.length === 0) return null;
-    if (result.length === 1) return Object.assign(m, result[0]);
-    return result.map(x => Object.assign(ORM.create(MClass, opt), x));
+    return this.#readResult(result, m, x => Object.assign(ORM.create(MClass, options), x), options.asArray);
   }
 
   /**
@@ -451,14 +452,10 @@ class ORM extends Model {
    * @returns {Promise<[]|object>}
    */
   static async readBy(MClass, key, values, options = {}) {
-    const opt = { database: ORM.database, ...options };
-    const m = ORM.create(MClass, opt);
-    const result = await m.adapter.readBy(key, values, opt.limit, opt.offset, opt.orderBy);
+    const m = ORM.create(MClass, options);
+    const result = await m.#adapter.readBy(key, values, options.limit, options.offset, options.orderBy);
 
-    if (opt.asArray) return result.map(x => Object.assign(ORM.create(MClass, opt), x));
-    if (result.length === 0) return null;
-    if (result.length === 1) return Object.assign(m, result[0]);
-    return result.map(x => Object.assign(ORM.create(MClass, opt), x));
+    return this.#readResult(result, m, x => Object.assign(ORM.create(MClass, options), x), options.asArray);
   }
 
   /**
@@ -476,14 +473,10 @@ class ORM extends Model {
    */
   static async readWith(MClass, criteria = [], options = {}) {
     if (criteria.length === 0) return [];
-    const opt = { database: ORM.database, ...options };
-    const m = ORM.create(MClass, opt);
-    const result = await m.adapter.readWith(criteria, opt.limit, opt.offset, opt.orderBy);
+    const m = ORM.create(MClass, options);
+    const result = await m.#adapter.readWith(criteria, options.limit, options.offset, options.orderBy);
 
-    if (opt.asArray) return result.map(x => Object.assign(ORM.create(MClass, opt), x));
-    if (result.length === 0) return null;
-    if (result.length === 1) return Object.assign(m, result[0]);
-    return result.map(x => Object.assign(ORM.create(MClass, opt), x));
+    return this.#readResult(result, m, x => Object.assign(ORM.create(MClass, options), x), options.asArray);
   }
 
   /**
@@ -496,31 +489,31 @@ class ORM extends Model {
    * @returns {Promise<*>}
    */
   static async count(MClass, options = {}) {
-    const m = ORM.create(MClass, { database: ORM.database, ...options });
-    return m.adapter.count(options.kv);
+    const m = ORM.create(MClass, options);
+    return m.#adapter.count(options.kv);
   }
 
   static async deleteAll(MClass, options = {}) {
-    const m = ORM.create(MClass, { database: ORM.database, ...options });
-    await m.adapter.deleteAll(options.kv);
+    const m = ORM.create(MClass, options);
+    await m.#adapter.deleteAll(options.kv);
   }
 
   /**
    *
-   * @param {Function<ORM>} MClass
+   * @param {ORM.} MClass
    * @param {string} key
    * @param {[]} values
    * @param options
    * @returns {Promise<void>}
    */
   static async deleteBy(MClass, key, values, options = {}) {
-    const m = ORM.create(MClass, { database: ORM.database, ...options });
-    return m.adapter.deleteBy(key, values);
+    const m = ORM.create(MClass, options);
+    return m.#adapter.deleteBy(key, values);
   }
 
   /**
    * Given criterias [['', 'id', SQL.EQUAL, 11], [SQL.AND, 'name', SQL.EQUAL, 'peter']]
-   * @param {Function<ORM>} MClass
+   * @param {ORM.} MClass
    * @param {[[string]]}criteria
    * @param options
    * @returns {Promise<void>}
@@ -528,24 +521,24 @@ class ORM extends Model {
   static async deleteWith(MClass, criteria, options = {}) {
     if (!criteria || criteria.length === 0) throw new Error(`${MClass.name} delete with no criteria`);
 
-    const m = ORM.create(MClass, { database: ORM.database, ...options });
-    return m.adapter.deleteWith(criteria);
+    const m = ORM.create(MClass, options);
+    return m.#adapter.deleteWith(criteria);
   }
 
   /**
-   * @param {Function<ORM>} MClass
+   * @param {ORM.} MClass
    * @param options
    * @param {Map} kv
    * @param {Map} columnValues
    */
   static async updateAll(MClass, kv, columnValues, options = {}) {
-    const m = ORM.create(MClass, { database: ORM.database, ...options });
-    await m.adapter.updateAll(kv, columnValues);
+    const m = ORM.create(MClass, options);
+    await m.#adapter.updateAll(kv, columnValues);
   }
 
   /**
    *
-   * @param {Function<ORM>} MClass
+   * @param {ORM.} MClass
    * @param options
    * @param {string} key
    * @param {[]} values
@@ -553,13 +546,13 @@ class ORM extends Model {
    * @returns {Promise<void>}
    */
   static async updateBy(MClass, key, values, columnValues, options = {}) {
-    const m = ORM.create(MClass, { database: ORM.database, ...options });
-    return m.adapter.updateBy(key, values, columnValues);
+    const m = ORM.create(MClass, options);
+    return m.#adapter.updateBy(key, values, columnValues);
   }
 
   /**
    * Given criterias [['', 'id', SQL.EQUAL, 11], [SQL.AND, 'name', SQL.EQUAL, 'peter']]
-   * @param {Function<ORM>} MClass
+   * @param {ORM.} MClass
    * @param options
    * @param {[[string]]}criteria
    * @param {Map} columnValues
@@ -569,13 +562,13 @@ class ORM extends Model {
     if (!criteria || criteria.length === 0) throw new Error(`${MClass.name} update with no criteria`);
     if (!columnValues || columnValues.size === 0) throw new Error(`${MClass.name} update without values`);
 
-    const m = ORM.create(MClass, { database: ORM.database, ...options });
-    return m.adapter.updateWith(criteria, columnValues);
+    const m = ORM.create(MClass, options);
+    return m.#adapter.updateWith(criteria, columnValues);
   }
 
   /**
    *
-   * @param {Function<ORM>} MClass
+   * @param {ORM.} MClass
    * @param options
    * @param {string[]} columns
    * @param {[String[]]} values
@@ -588,8 +581,8 @@ class ORM extends Model {
       if (!MClass.fields.has(x) && !MClass.belongsTo.has(x)) throw new Error(`${MClass.name} insert invalid columns ${x}`);
     });
 
-    const m = ORM.create(MClass, { database: ORM.database, ...options });
-    return m.adapter.insertAll(columns, values, options.insertIDs || []);
+    const m = ORM.create(MClass, options);
+    return m.#adapter.insertAll(columns, values, options.insertIDs || []);
   }
 
   static require(modelName) {

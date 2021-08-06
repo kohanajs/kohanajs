@@ -43,7 +43,8 @@ class ORMAdapter {
   }
 
   processValues() {
-    return this.constructor.translateValue(this.client.columns.map(x => this.client[x]));
+    const columns = this.client.getColumns();
+    return this.constructor.translateValue(columns.map(x => this.client[x]));
   }
 
   static translateValue(values) {
