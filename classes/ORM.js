@@ -588,6 +588,84 @@ class ORM extends Model {
   static require(modelName) {
     return KohanaJS.require(ORM.classPrefix + modelName);
   }
+
+  /**
+   *
+   * @param {ORM[]} orms
+   * @param {Object} options
+   * @param {Object} ormOptions
+   * @returns {Promise<void>}
+   */
+  static async eagerLoad(orms, options, ormOptions){
+    if(orms.length < 1)return;
+    if(!options.with)return;
+    //with is belongsTo, hasMany
+    const belongsToMap = new Map();
+    const hasManyMap = new Map();
+    const orm_ids = orms.map(it => it.id);
+    const Model = orms[0].constructor;
+
+    options.with.forEach(withModel =>{
+
+      Model.belongsTo.forEach((parentModel, field) => {
+        if(parentModel !== withModel)return;
+
+        belongsToMap.set(parentModel, {
+          field,
+          property: ORM.require(parentModel).tableName,
+          instances: orms.map(it=> it[field])
+        })
+      });
+
+      Model.hasMany.forEach(entry => {
+        const fk = entry[0];
+        const childModel = entry[1];
+
+        if(childModel !== withModel)return;
+
+        hasManyMap.set(childModel, {
+          fk,
+          property: ORM.require(childModel).tableName,
+          instances: orm_ids
+        });
+      })
+    })
+
+    await Promise.all(
+      Array.from(belongsToMap.entries()).map(async v => {
+        v[1].instances = await ORM.readBy(ORM.require(v[0]), 'id', v[1].instances, {...ormOptions, asArray:true});
+      })
+    )
+
+    await Promise.all(
+      Array.from(hasManyMap.entries()).map(async v => {
+        v[1].instances = await ORM.readBy(ORM.require(v[0]), v[1].fk, v[1].instances, {...ormOptions, asArray:true});
+      })
+    )
+
+    const promises = [];
+    orms.forEach(it =>{
+      belongsToMap.forEach(v =>{
+        const field = v.field;
+        const property = v.property;
+        const instances = v.instances;
+        //it.parent = parents(it.parent_id)
+        it[property] = instances.find( parent => parent.id === it[field] );
+        promises.push(this.eagerLoad(instances, options[property], ormOptions));
+      })
+
+      hasManyMap.forEach(v =>{
+        const fk = v.fk;
+        const property = v.property;
+        const instances = v.instances;
+
+        it[property] = instances.filter( children => children[fk] === it.id );
+        promises.push(this.eagerLoad(instances, options[property], ormOptions));
+      })
+    })
+
+    await Promise.all(promises);
+  }
 }
 
 Object.freeze(ORM.prototype);
