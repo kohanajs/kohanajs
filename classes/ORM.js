@@ -592,55 +592,82 @@ class ORM extends Model {
   /**
    *
    * @param {ORM[]} orms
-   * @param {Object} options
+   * @param {Object} eagerLoadOptions
    * @param {Object} ormOptions
    * @returns {Promise<ORM[]>}
    */
-  static async eagerLoad(orms, options, ormOptions){
+  static async eagerLoad(orms, eagerLoadOptions, ormOptions){
     if(orms.length < 1)return [];
-    if(!options.with)return [];
+    if(!eagerLoadOptions.with)return [];
     //with is belongsTo, hasMany
     const belongsToMap = new Map();
     const hasManyMap = new Map();
+    const belongsToManyMap = new Map();
     const orm_ids = orms.map(it => it.id);
     const Model = orms[0].constructor;
 
-    options.with.forEach(withModel =>{
+    const allowClasses = new Set(eagerLoadOptions.with);
 
-      Model.belongsTo.forEach((parentModel, field) => {
-        if(parentModel !== withModel)return;
+    Model.belongsTo.forEach((parentModel, field) => {
+      if(!allowClasses.has(parentModel))return;
 
-        belongsToMap.set(parentModel, {
-          field,
-          property: ORM.require(parentModel).joinTablePrefix,
-          instances: orms.map(it=> it[field])
-        })
+      belongsToMap.set(parentModel, {
+        field,
+        property: ORM.require(parentModel).joinTablePrefix,
+        values: orms.map(it=> it[field]),
+        instances: []
+      })
+    });
+
+    Model.hasMany.forEach(entry => {
+      const fk = entry[0];
+      const childModel = entry[1];
+      if(!allowClasses.has(childModel))return;
+
+      hasManyMap.set(childModel, {
+        fk,
+        property: ORM.require(childModel).tableName,
+        values: orm_ids,
+        instances: []
       });
+    });
 
-      Model.hasMany.forEach(entry => {
-        const fk = entry[0];
-        const childModel = entry[1];
-
-        if(childModel !== withModel)return;
-
-        hasManyMap.set(childModel, {
-          fk,
-          property: ORM.require(childModel).tableName,
-          instances: orm_ids
-        });
+    Model.belongsToMany.forEach(siblingModel => {
+      if(!allowClasses.has(siblingModel))return;
+      belongsToManyMap.set(siblingModel, {
+        property: ORM.require(siblingModel).tableName,
+        values: orm_ids,
+        instances: []
       })
     })
 
-    await Promise.all(
-      Array.from(belongsToMap.entries()).map(async v => {
-        v[1].instances = await ORM.readBy(ORM.require(v[0]), 'id', v[1].instances, {...ormOptions, asArray:true});
-      })
-    )
 
     await Promise.all(
-      Array.from(hasManyMap.entries()).map(async v => {
-        v[1].instances = await ORM.readBy(ORM.require(v[0]), v[1].fk, v[1].instances, {...ormOptions, asArray:true});
-      })
+      [
+      ...Array.from(belongsToMap.entries()).map(async v => {
+        v[1].instances = await ORM.readBy(ORM.require(v[0]), 'id', v[1].values, {...ormOptions, asArray:true});
+      }),
+      ...Array.from(hasManyMap.entries()).map(async v => {
+        v[1].instances = await ORM.readBy(ORM.require(v[0]), v[1].fk, v[1].values, {...ormOptions, asArray:true});
+      }),
+      ...Array.from(belongsToManyMap.entries()).map(async v => {
+        const siblingModel = ORM.require(v[0]);
+
+        class JoinTable extends ORM{
+          static tableName = Model.joinTablePrefix + "_" + v.property;
+        }
+
+        const joins = await ORM.readBy(JoinTable, `${Model.joinTablePrefix}_id`, v[1].values, {...ormOptions, asArray:true});
+        const siblingMap = new Map();
+        joins.forEach(join => {
+          siblingMap.set( join[`${siblingModel.joinTablePrefix}_id`] , join[`${Model.joinTablePrefix}_id`])
+        })
+
+        const instances = await ORM.readBy(siblingModel, 'id', joins.map(it => it[`${siblingModel.joinTablePrefix}_id`]), {...ormOptions, asArray:true});
+        instances.forEach(instance => instance.sibling = siblingMap.get(instance.id))
+        v[1].instances = instances
+      }),
+      ]
     )
 
     const promises = [];
@@ -651,9 +678,7 @@ class ORM extends Model {
         const instances = v.instances;
         //it.parent = parents(it.parent_id)
         it[property] = instances.find( parent => parent.id === it[field] );
-        if(options[property]) {
-          promises.push(this.eagerLoad(instances, options[property], ormOptions));
-        }
+        if(eagerLoadOptions[property]) promises.push(this.eagerLoad(instances, eagerLoadOptions[property], ormOptions));
       })
 
       hasManyMap.forEach(v =>{
@@ -662,9 +687,15 @@ class ORM extends Model {
         const instances = v.instances;
 
         it[property] = instances.filter( children => children[fk] === it.id );
-        if(options[property]) {
-          promises.push(this.eagerLoad(instances, options[property], ormOptions));
-        }
+        if(eagerLoadOptions[property]) promises.push(this.eagerLoad(instances, eagerLoadOptions[property], ormOptions));
+      })
+
+      belongsToManyMap.forEach(v => {
+        const property = v.property;
+        const instances = v.instances;
+
+        it[property] = instances.filter( sibling => sibling.sibling === it.id);
+        if(eagerLoadOptions[property]) promises.push(this.eagerLoad(instances, eagerLoadOptions[property], ormOptions));
       })
     })
 
