@@ -591,14 +591,12 @@ class ORM extends Model {
 
   /**
    *
-   * @param {Promise<ORM[]>} ormPromise
+   * @param {ORM[]} orms
    * @param {Object} options
    * @param {Object} ormOptions
    * @returns {Promise<ORM[]>}
    */
-  static async eagerLoad(ormPromise, options, ormOptions){
-    const orms = await ormPromise;
-
+  static async eagerLoad(orms, options, ormOptions){
     if(orms.length < 1)return [];
     if(!options.with)return [];
     //with is belongsTo, hasMany
