@@ -591,14 +591,16 @@ class ORM extends Model {
 
   /**
    *
-   * @param {ORM[]} orms
+   * @param {Promise<ORM[]>} ormPromise
    * @param {Object} options
    * @param {Object} ormOptions
-   * @returns {Promise<void>}
+   * @returns {Promise<ORM[]>}
    */
-  static async eagerLoad(orms, options, ormOptions){
-    if(orms.length < 1)return;
-    if(!options.with)return;
+  static async eagerLoad(ormPromise, options, ormOptions){
+    const orms = await ormPromise;
+
+    if(orms.length < 1)return [];
+    if(!options.with)return [];
     //with is belongsTo, hasMany
     const belongsToMap = new Map();
     const hasManyMap = new Map();
@@ -612,7 +614,7 @@ class ORM extends Model {
 
         belongsToMap.set(parentModel, {
           field,
-          property: ORM.require(parentModel).tableName,
+          property: ORM.require(parentModel).joinTablePrefix,
           instances: orms.map(it=> it[field])
         })
       });
@@ -651,7 +653,9 @@ class ORM extends Model {
         const instances = v.instances;
         //it.parent = parents(it.parent_id)
         it[property] = instances.find( parent => parent.id === it[field] );
-        promises.push(this.eagerLoad(instances, options[property], ormOptions));
+        if(options[property]) {
+          promises.push(this.eagerLoad(instances, options[property], ormOptions));
+        }
       })
 
       hasManyMap.forEach(v =>{
@@ -660,11 +664,15 @@ class ORM extends Model {
         const instances = v.instances;
 
         it[property] = instances.filter( children => children[fk] === it.id );
-        promises.push(this.eagerLoad(instances, options[property], ormOptions));
+        if(options[property]) {
+          promises.push(this.eagerLoad(instances, options[property], ormOptions));
+        }
       })
     })
 
+    //recursive
     await Promise.all(promises);
+    return orms;
   }
 }
 
