@@ -127,7 +127,7 @@ class ORM extends Model {
 
     const parents = [];
     this.constructor.belongsTo.forEach((v, k) => {
-      if (allowClasses && !allowClasses.has(v)) return;
+      if (!allowClasses.has(v)) return;
 
       const name = k.replace('_id', '');
       const opt = option[name];
@@ -148,7 +148,7 @@ class ORM extends Model {
     this.constructor.hasMany.forEach(x => {
       const k = x[0];
 
-      if (allowClasses && !allowClasses.has(x[1])) return;
+      if (!allowClasses.has(x[1])) return;
 
       const ModelClass = ORM.require(x[1]);
       const name = ModelClass.tableName;
@@ -174,7 +174,7 @@ class ORM extends Model {
 
     const siblings = [];
     this.constructor.belongsToMany.forEach(x => {
-      if (allowClasses && !allowClasses.has(x)) return;
+      if (!allowClasses.has(x)) return;
 
       const ModelClass = ORM.require(x);
       const name = ModelClass.tableName;
@@ -616,7 +616,9 @@ class ORM extends Model {
         property: ORM.require(parentModel).joinTablePrefix,
         values: orms.map(it=> it[field]),
         instances: []
-      })
+      });
+
+      allowClasses.delete(parentModel);
     });
 
     Model.hasMany.forEach(entry => {
@@ -630,6 +632,8 @@ class ORM extends Model {
         values: orm_ids,
         instances: []
       });
+
+      allowClasses.delete(childModel);
     });
 
     Model.belongsToMany.forEach(siblingModel => {
@@ -639,8 +643,46 @@ class ORM extends Model {
         values: orm_ids,
         instances: []
       })
+
+      allowClasses.delete(siblingModel);
     })
 
+    //request with RelatedModel but not in belongsTo, hasMany and belongsToMany
+    Array.from(allowClasses.values()).forEach(
+      relatedModelName => {
+        const RelatedModel = ORM.require(relatedModelName);
+
+        //check is further parent
+        if(Model.fields.has(RelatedModel.joinTablePrefix+'_id')){
+          const field = RelatedModel.joinTablePrefix+'_id'
+
+          belongsToMap.set(relatedModelName, {
+            field,
+            property: RelatedModel.joinTablePrefix,
+            values: orms.map(it=> it[field]),
+            instances: []
+          });
+
+          allowClasses.delete(relatedModelName);
+          return;
+        }
+
+        //check is further children
+        if(RelatedModel.fields.has(Model.joinTablePrefix+'_id')){
+          const fk = Model.joinTablePrefix+'_id';
+
+          hasManyMap.set(RelatedModel, {
+            fk,
+            property: RelatedModel.tableName,
+            values: orm_ids,
+            instances: []
+          });
+          allowClasses.delete(relatedModelName);
+        }
+      }
+    );
+
+    if(allowClasses.size > 0)throw new Error('Invalid eager load with' + Array.from(allowClasses.values()));
 
     await Promise.all(
       [

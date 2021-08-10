@@ -24,7 +24,16 @@ class DatabaseDriver {
   prepare(sql) { return new DatabaseStatement(sql); }
 
   // eslint-disable-next-line class-methods-use-this
-  async transaction(fn) {}
+  async transaction(fn) {
+    await this.transactionStart();
+    try{
+      await fn();
+    }catch(e){
+      await this.transactionRollback();
+      throw e;
+    }
+    await this.transactionCommit();
+  }
 
   // eslint-disable-next-line class-methods-use-this
   async exec(sql) {
@@ -34,6 +43,18 @@ class DatabaseDriver {
 
   // eslint-disable-next-line class-methods-use-this
   async close() {}
+
+  // eslint-disable-next-line class-methods-use-this
+  async transactionStart(){}
+
+  // eslint-disable-next-line class-methods-use-this
+  async transactionRollback(){}
+
+  // eslint-disable-next-line class-methods-use-this
+  async transactionCommit(){}
+
+  // eslint-disable-next-line class-methods-use-this
+  async checkpoint(){}
 
   /**
    *
