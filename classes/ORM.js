@@ -130,9 +130,7 @@ class ORM extends Model {
       if (!allowClasses.has(v)) return;
 
       const name = k.replace('_id', '');
-      const opt = option[name];
-      if (!opt) return;
-      parents.push({ name, opt, key: k });
+      parents.push({ name, opt: option[name], key: k });
     });
 
     await Promise.all(
@@ -140,7 +138,7 @@ class ORM extends Model {
         const instance = await this.parent(p.key);
         this[p.name] = instance;
         if (!instance) return; // parent can be null
-        await instance.eagerLoad(p.opt);
+        if(p.opt)await instance.eagerLoad(p.opt);
       }),
     );
 
@@ -152,11 +150,8 @@ class ORM extends Model {
 
       const ModelClass = ORM.require(x[1]);
       const name = ModelClass.tableName;
-      const opt = option[name];
-      if (!opt) return;
-
       props.push({
-        name, opt, key: k, model: ModelClass,
+        name, opt: option[name], key: k, model: ModelClass,
       });
     });
 
@@ -166,9 +161,11 @@ class ORM extends Model {
         if (!instances) return;
         this[p.model.tableName] = instances;
 
-        await Promise.all(
-          instances.map(instance => instance.eagerLoad(p.opt)),
-        );
+        if(p.opt){
+          await Promise.all(
+            instances.map(instance => instance.eagerLoad(p.opt)),
+          );
+        }
       }),
     );
 
@@ -178,9 +175,7 @@ class ORM extends Model {
 
       const ModelClass = ORM.require(x);
       const name = ModelClass.tableName;
-      const opt = option[name];
-      if (!opt) return;
-      siblings.push({ name, opt, model: ModelClass });
+      siblings.push({ name, opt: option[name], model: ModelClass });
     });
 
     await Promise.all(
@@ -189,9 +184,11 @@ class ORM extends Model {
         if (!instances) return;
         this[s.model.tableName] = instances;
 
-        await Promise.all(
-          instances.map(instance => instance.eagerLoad(s.opt)),
-        );
+        if(s.opt){
+          await Promise.all(
+            instances.map(instance => instance.eagerLoad(s.opt)),
+          );
+        }
       }),
     );
   }
