@@ -40,7 +40,12 @@ class ControllerMixinDatabase extends ControllerMixin {
 
     const connections = new Map();
     databaseMap.forEach((v, k) => {
-      connections.set(k, driverClass.create(v));
+      try {
+        connections.set(k, driverClass.create(v));
+      } catch (e) {
+        console.log(v);
+        throw e;
+      }
     });
 
     connections.set('createdAt', Date.now());
