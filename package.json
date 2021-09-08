@@ -1,6 +1,6 @@
 {
   "name": "kohanajs",
-  "version": "5.2.1",
+  "version": "6.0.0",
   "description": "Node.js MVC framework base on PHP Kohana Framework",
   "main": "index.js",
   "scripts": {

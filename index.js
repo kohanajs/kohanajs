@@ -35,7 +35,6 @@ module.exports = {
   DatabaseDriver: require('./classes/DatabaseDriver'),
 
   ControllerMixinMime: require('./classes/controller-mixin/Mime'),
-  ControllerMixinMultipartForm: require('./classes/controller-mixin/MultipartForm'),
   ControllerMixinView: require('./classes/controller-mixin/View'),
   ControllerMixinDatabase: require('./classes/controller-mixin/Database'),
 };

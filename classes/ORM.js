@@ -171,7 +171,7 @@ class ORM extends Model {
 
     const siblings = [];
     this.constructor.belongsToMany.forEach(x => {
-      if (!allowClasses.has(x)) return;
+      if (!allowClasses || !allowClasses.has(x)) return;
 
       const ModelClass = ORM.require(x);
       const name = ModelClass.tableName;
