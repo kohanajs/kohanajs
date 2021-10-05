@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### accept tags: Added, Changed, Removed, Deprecated, Removed, Fixed, Security
 
+## [6.0.1] - 2021-10-05
+### Changed
+- KohanaJS init.js loading sequence, load require first, then system, then module
+
+## [6.0.0] - 2021-09-07
+### Changed
+- update KohanaJS version number
+
 ## [6.0.0] - 2021-09-07
 ### Changed
 - Move ControllerMixinMultipartForm to @kohanajs/mod-form

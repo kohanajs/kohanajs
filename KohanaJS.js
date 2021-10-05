@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2020 Kojin Nakana
+Copyright (c) 2021 Kojin Nakana
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -34,7 +34,7 @@ class KohanaJS {
 
   static #configSources = new Map();
 
-  static VERSION = '5.0.0';
+  static VERSION = '6.0.1';
 
   static SYS_PATH = __dirname;
 
@@ -122,19 +122,15 @@ class KohanaJS {
   }
 
   static #reloadModuleInit() {
-    // activate init.js in modules
-    if (KohanaJS.bootstrap.modules) {
-      KohanaJS.bootstrap.modules.forEach(x => {
-        const initPath = `${KohanaJS.MOD_PATH}/${x}/init.js`;
-        const filePath = path.normalize(initPath);
-        if (!fs.existsSync(path.normalize(filePath))) return;
+    // activate init.js in require('kohanajs-sample-module')
+    KohanaJS.nodePackages.forEach(x => {
+      const initPath = `${x}/init.js`;
+      const filePath = path.normalize(initPath);
+      if (!fs.existsSync(filePath)) return;
 
-        // load the init file
-        require(initPath);
-        // do not cache it.
-        delete require.cache[filePath];
-      });
-    }
+      require(initPath);
+      delete require.cache[filePath];
+    });
 
     // activate init.js in system
     if (KohanaJS.bootstrap.system) {
@@ -148,15 +144,19 @@ class KohanaJS {
       });
     }
 
-    // activate init.js in require('kohanajs-sample-module')
-    KohanaJS.nodePackages.forEach(x => {
-      const initPath = `${x}/init.js`;
-      const filePath = path.normalize(initPath);
-      if (!fs.existsSync(filePath)) return;
+    // activate init.js in modules
+    if (KohanaJS.bootstrap.modules) {
+      KohanaJS.bootstrap.modules.forEach(x => {
+        const initPath = `${KohanaJS.MOD_PATH}/${x}/init.js`;
+        const filePath = path.normalize(initPath);
+        if (!fs.existsSync(path.normalize(filePath))) return;
 
-      require(initPath);
-      delete require.cache[filePath];
-    });
+        // load the init file
+        require(initPath);
+        // do not cache it.
+        delete require.cache[filePath];
+      });
+    }
   }
 
   static addNodeModule(dirname) {
