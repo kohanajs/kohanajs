@@ -11,10 +11,12 @@ class ControllerMixinDatabase extends ControllerMixin {
 
   static DATABASES = 'databases';
 
+  static DEFAULT_DATABASE_DRIVER = DatabaseDriver;
+
   static init(state) {
     if (!state.get(this.DATABASE_MAP))state.set(this.DATABASE_MAP, new Map());
     if (!state.get(this.DATABASES))state.set(this.DATABASES, new Map());
-    if (!state.get(this.DATABASE_DRIVER))state.set(this.DATABASE_DRIVER, DatabaseDriver);
+    if (!state.get(this.DATABASE_DRIVER))state.set(this.DATABASE_DRIVER, this.DEFAULT_DATABASE_DRIVER);
   }
 
   static async setup(state) {
