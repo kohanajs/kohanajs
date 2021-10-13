@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### accept tags: Added, Changed, Removed, Deprecated, Removed, Fixed, Security
 
+## [6.1.2] - 2021-10-13
+### Fixed
+- test files
+
+## [6.1.1] - 2021-10-13
+### Fixed
+- fix config loading error when config file not exist but provided fallback object.
+
 ## [6.1.0] - 2021-10-06
 ### Added
 - Default Database Driver

@@ -34,7 +34,7 @@ class KohanaJS {
 
   static #configSources = new Map();
 
-  static VERSION = '6.0.1';
+  static VERSION = '6.1.2';
 
   static SYS_PATH = __dirname;
 
@@ -49,6 +49,10 @@ class KohanaJS {
   static VIEW_PATH = KohanaJS.SYS_PATH;
 
   static ENV = '';
+  static ENV_DEVE = 'dev';
+  static ENV_TEST = 'uat';
+  static ENV_STAG = 'stg';
+  static ENV_PROD = 'prd';
 
   static config = { classes: {}, view: {} };
 
@@ -236,12 +240,18 @@ class KohanaJS {
     KohanaJS.config = {};
     // search all config files
     KohanaJS.#configs.forEach(key => {
-      const fileName = `${key}.js`;
-      KohanaJS.configPath.set(fileName, null); // never cache site config file.
+      KohanaJS.config[key] = {...KohanaJS.#configSources.get(key)}
 
-      const file = KohanaJS.#resolve(fileName, 'config', KohanaJS.configPath, true);
-      KohanaJS.config[key] = { ...KohanaJS.#configSources.get(key), ...require(file) };
-      delete require.cache[path.normalize(file)];
+      const fileName = `${key}.js`;
+
+      try{
+        KohanaJS.configPath.set(fileName, null); // never cache config file path.
+        const file = KohanaJS.#resolve(fileName, 'config', KohanaJS.configPath, true);
+        Object.assign(KohanaJS.config[key], require(file));
+        delete require.cache[path.normalize(file)];
+      }catch(e){
+        //config file not found;
+      }
     });
   }
 

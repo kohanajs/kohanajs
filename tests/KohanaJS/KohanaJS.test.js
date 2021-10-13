@@ -169,13 +169,9 @@ describe('KohanaJS test', () => {
     }
 
     kohanaJS.configForceUpdate = true;
-    try {
-      kohanaJS.initConfig(new Map([['salt', '']]));
-    } catch (e) {
-      expect(e.message).toBe('KohanaJS resolve path error: path salt.js not found. config , {} ');
-    }
+    kohanaJS.initConfig(new Map([['salt', {value:'hello'}]]));
 
-    expect(kohanaJS.config.salt).toBe(undefined);
+    expect(kohanaJS.config.salt.value).toBe('hello');
 
     fs.copyFileSync(path.normalize(`${kohanaJS.APP_PATH}/config/salt.default.js`), path.normalize(`${kohanaJS.APP_PATH}/config/salt.js`));
     jest.resetModules();
@@ -191,7 +187,7 @@ describe('KohanaJS test', () => {
       expect(e.message).toBe('KohanaJS resolve path error: path salt.js not found. config , {} ');
     }
 
-    expect(kohanaJS.config.salt).toBe(undefined);
+    expect(kohanaJS.config.salt.value).toBe('hello');
   });
 
   test('setPath default value', () => {
