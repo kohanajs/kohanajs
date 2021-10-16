@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### accept tags: Added, Changed, Removed, Deprecated, Removed, Fixed, Security
 
+## [6.1.3] - 2021-10-16
+### Fixed
+- defaultViewData not assign to default layout.
+
 ## [6.1.2] - 2021-10-13
 ### Fixed
 - test files

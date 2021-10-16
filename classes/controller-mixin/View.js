@@ -17,15 +17,14 @@ class ControllerMixinView extends ControllerMixin {
   static ERROR_TEMPLATE = 'errorTemplate';
 
   static init(state) {
-    if (!state.get(this.LAYOUT_FILE))state.set(this.LAYOUT_FILE, 'layout/default');
-    if (!state.get(this.PLACEHOLDER))state.set(this.PLACEHOLDER, 'main');
-    if (!state.get(this.VIEW_CLASS))state.set(this.VIEW_CLASS, View.DefaultViewClass);
-    if (!state.get(this.LAYOUT))state.set(this.LAYOUT, this.#getView(state.get(this.LAYOUT_FILE), {}, state.get(this.THEME_PATH), state.get(this.VIEW_CLASS)));
-
     const client = state.get('client');
     const defaultViewData = {
       language: client.language,
     };
+
+    if (!state.get(this.LAYOUT_FILE))state.set(this.LAYOUT_FILE, 'layout/default');
+    if (!state.get(this.PLACEHOLDER))state.set(this.PLACEHOLDER, 'main');
+    if (!state.get(this.VIEW_CLASS))state.set(this.VIEW_CLASS, View.DefaultViewClass);
 
     client.getView = (file, data = {}) => this.#getView(file, data, state.get(this.THEME_PATH), state.get(this.VIEW_CLASS));
 
@@ -40,6 +39,8 @@ class ControllerMixinView extends ControllerMixin {
     client.setErrorTemplate = (file, data = {}) => state.set(this.ERROR_TEMPLATE, (typeof file === 'string')
       ? this.#getView(file, { ...defaultViewData, ...data }, state.get(this.THEME_PATH), state.get(this.VIEW_CLASS))
       : file);
+
+    if (!state.get(this.LAYOUT))client.setLayout(state.get(this.LAYOUT_FILE), {});
   }
 
   static async setup(state) {
