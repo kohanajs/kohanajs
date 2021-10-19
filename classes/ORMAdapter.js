@@ -1,22 +1,25 @@
-class ORMAdapter{
+const { randomUUID } = require('crypto');
+
+class ORMAdapter {
   static OP = {
-    'EQUAL' : '=',
-    'GREATER_THAN' : '>',
-    'LESS_THAN' : '<',
-    'GREATER_THAN_EQUAL' : '>=',
-    'LESS_THAN_EQUAL' : '<=',
-    'NOT_EQUAL' : '<>',
-    'BETWEEN' : 'BETWEEN',
-    'LIKE' : 'LIKE',
-    'IN' : 'IN',
-    'AND' : 'AND',
-    'OR' : 'OR',
-    'TRUE': 'TRUE',
-    'FALSE' : 'FALSE',
-    'BLANK' : "''",
-    'START_GROUP' : '(',
-    'END_GROUP' : ')',
-    'NULL' : 'NULL',
+    EQUAL: '=',
+    GREATER_THAN: '>',
+    LESS_THAN: '<',
+    GREATER_THAN_EQUAL: '>=',
+    LESS_THAN_EQUAL: '<=',
+    NOT_EQUAL: '<>',
+    BETWEEN: 'BETWEEN',
+    LIKE: 'LIKE',
+    IN: 'IN',
+    AND: 'AND',
+    OR: 'OR',
+    TRUE: 'TRUE',
+    FALSE: 'FALSE',
+    BLANK: "''",
+    START_GROUP: '(',
+    END_GROUP: ')',
+    NULL: 'NULL',
+    IS_NULL: 'IS NULL',
   };
 
   /**
@@ -30,38 +33,49 @@ class ORMAdapter{
     this.database = database;
   }
 
-  defaultID(){
-    return ( ( (Date.now() - 1563741060000) / 1000 ) | 0 ) * 100000 + ((Math.random() * 100000) & 65535);
+  static defaultID() {
+    // eslint-disable-next-line no-bitwise
+    return (Math.floor((Date.now() - 1563741060000) / 1000)) * 100000 + ((Math.random() * 100000) & 65535);
   }
 
-  processValues(){
-    return this.translateValue(this.client.columns.map(x => this.client[x]));
+  static uuid() {
+    return randomUUID({ disableEntropyCache: true });
   }
 
-  translateValue(values){
+  processValues() {
+    const columns = this.client.getColumns();
+    return this.constructor.translateValue(columns.map(x => this.client[x]));
+  }
+
+  static translateValue(values) {
     return values;
   }
 
-  async read(){}
+  // eslint-disable-next-line class-methods-use-this
+  async read() {}
 
   /**
    *
    * @param {[]} values
    * @returns {Promise<void>}
    */
-  async update(values){}
+  // eslint-disable-next-line class-methods-use-this
+  async update(values) {}
+
   /**
    *
    * @param {[]} values
    * @returns {Promise<void>}
    */
-  async insert(values){}
+  // eslint-disable-next-line class-methods-use-this
+  async insert(values) {}
 
   /**
    *
    * @returns {Promise<void>}
    */
-  async delete(){}
+  // eslint-disable-next-line class-methods-use-this
+  async delete() {}
 
   /**
    *
@@ -69,7 +83,8 @@ class ORMAdapter{
    * @param {string} key
    * @returns {Promise<void>}
    */
-  async hasMany(tableName, key){}
+  // eslint-disable-next-line class-methods-use-this
+  async hasMany(tableName, key) {}
 
   /**
    *
@@ -79,7 +94,9 @@ class ORMAdapter{
    * @param {string} fk
    * @returns {Promise<void>}
    */
-  async belongsToMany(modelTableName, jointTableName , lk, fk){}
+  // eslint-disable-next-line class-methods-use-this
+  async belongsToMany(modelTableName, jointTableName, lk, fk) {}
+
   /**
    * add belongsToMany
    * @param {ORM[]} models
@@ -88,7 +105,9 @@ class ORMAdapter{
    * @param {string} lk
    * @param {string} fk
    */
-  async add(models, weight, jointTableName, lk, fk){}
+  // eslint-disable-next-line class-methods-use-this
+  async add(models, weight, jointTableName, lk, fk) {}
+
   /**
    * remove
    * @param {ORM[]} models
@@ -96,14 +115,17 @@ class ORMAdapter{
    * @param {string} lk
    * @param {string} fk
    */
-  async remove(models, jointTableName, lk, fk){}
+  // eslint-disable-next-line class-methods-use-this
+  async remove(models, jointTableName, lk, fk) {}
+
   /**
    *
    * @param {string} jointTableName
    * @param {string} lk
    * @returns {Promise<void>}
    */
-  async removeAll(jointTableName, lk){}
+  // eslint-disable-next-line class-methods-use-this
+  async removeAll(jointTableName, lk) {}
 
   /**
    *
@@ -114,9 +136,11 @@ class ORMAdapter{
    * @param {Map} orderBy
    * @returns {Promise<[]>}
    */
-  async readAll(kv, limit=1000, offset=0, orderBy= new Map([['id', 'ASC']])){
+  // eslint-disable-next-line class-methods-use-this
+  async readAll(kv, limit = 1000, offset = 0, orderBy = new Map([['id', 'ASC']])) {
     return [];
   }
+
   /**
    *
    * @param {string} key
@@ -126,9 +150,11 @@ class ORMAdapter{
    * @param {Map} orderBy
    * @returns {Promise<[]>}
    */
-  async readBy(key, values, limit=1000, offset=0, orderBy= new Map([['id', 'ASC']])){
+  // eslint-disable-next-line class-methods-use-this
+  async readBy(key, values, limit = 1000, offset = 0, orderBy = new Map([['id', 'ASC']])) {
     return [];
   }
+
   /**
    *
    * @param {[[string]]}criteria
@@ -137,7 +163,8 @@ class ORMAdapter{
    * @param {Map} orderBy
    * @returns {Promise<[]>}
    */
-  async readWith(criteria, limit=1000, offset=0, orderBy= new Map([['id', 'ASC']])){
+  // eslint-disable-next-line class-methods-use-this
+  async readWith(criteria, limit = 1000, offset = 0, orderBy = new Map([['id', 'ASC']])) {
     return [];
   }
 
@@ -145,7 +172,8 @@ class ORMAdapter{
    * @param {Map|null} kv
    * @returns {Promise<number>}
    */
-  async count(kv = null){
+  // eslint-disable-next-line class-methods-use-this
+  async count(kv = null) {
     return 0;
   }
 
@@ -154,20 +182,25 @@ class ORMAdapter{
    * @param {Map|null} kv
    * @returns {Promise<void>}
    */
-  async deleteAll(kv = null){}
+  // eslint-disable-next-line class-methods-use-this
+  async deleteAll(kv = null) {}
+
   /**
    *
    * @param {string} key
    * @param {[]} values
    * @returns {Promise<void>}
    */
-  async deleteBy(key, values){}
+  // eslint-disable-next-line class-methods-use-this
+  async deleteBy(key, values) {}
+
   /**
    *
    * @param {[[string]]}criteria
    * @returns {Promise<void>}
    */
-  async deleteWith(criteria){}
+  // eslint-disable-next-line class-methods-use-this
+  async deleteWith(criteria) {}
 
   /**
    *
@@ -175,7 +208,9 @@ class ORMAdapter{
    * @param {Map} columnValues
    * @returns {Promise<void>}
    */
-  async updateAll(kv, columnValues){}
+  // eslint-disable-next-line class-methods-use-this
+  async updateAll(kv, columnValues) {}
+
   /**
    *
    * @param {string} key
@@ -183,14 +218,17 @@ class ORMAdapter{
    * @param {Map} columnValues
    * @returns {Promise<void>}
    */
-  async updateBy(key, values, columnValues){}
+  // eslint-disable-next-line class-methods-use-this
+  async updateBy(key, values, columnValues) {}
+
   /**
    *
    * @param {[[string]]}criteria
    * @param {Map} columnValues
    * @returns {Promise<void>}
    */
-  async updateWith(criteria, columnValues){}
+  // eslint-disable-next-line class-methods-use-this
+  async updateWith(criteria, columnValues) {}
 
   /**
    *
@@ -199,7 +237,8 @@ class ORMAdapter{
    * @param {number[]} ids
    * @returns {Promise<void>}
    */
-  async insertAll(columns, valueGroups, ids){}
+  // eslint-disable-next-line class-methods-use-this
+  async insertAll(columns, valueGroups, ids) {}
 }
 
 module.exports = ORMAdapter;

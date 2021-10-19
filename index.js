@@ -23,26 +23,18 @@ SOFTWARE.
 
 */
 
-const core = require("@kohanajs/core-mvc");
 const KohanaJS = require('./KohanaJS');
 
 module.exports = {
-  Model : core.Model,
-  View : core.View,
-  Controller : core.Controller,
-  ControllerMixin : core.ControllerMixin,
-  KohanaJS : KohanaJS,
+  KohanaJS,
   addNodeModule: KohanaJS.addNodeModule,
-  dereference : KohanaJS.dereference,
-  init : KohanaJS.init,
-  mergeOption : KohanaJS.mergeOption,
+  init: KohanaJS.init,
 
   ORM: require('./classes/ORM'),
   ORMAdapter: require('./classes/ORMAdapter'),
-  DatabaseDriver : require('./classes/DatabaseDriver'),
+  DatabaseDriver: require('./classes/DatabaseDriver'),
 
-  ControllerMixinMime : require('./classes/controller-mixin/Mime'),
-  ControllerMixinMultipartForm : require('./classes/controller-mixin/MultipartForm'),
-  ControllerMixinView : require('./classes/controller-mixin/View'),
-  ControllerMixinDatabase : require('./classes/controller-mixin/Database'),
+  ControllerMixinMime: require('./classes/controller-mixin/Mime'),
+  ControllerMixinView: require('./classes/controller-mixin/View'),
+  ControllerMixinDatabase: require('./classes/controller-mixin/Database'),
 };

@@ -24,3 +24,4 @@ tests/KohanaJS/orm/db/db1.sqlite
 tests/KohanaJS/orm/db/db2.sqlite
 tests/KohanaJS/orm/db/db3.sqlite
 tests/KohanaJS/test13/db/empty.sqlite
+tests/mixin/temp/

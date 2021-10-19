@@ -1,60 +1,100 @@
-const {ControllerMixin, View} = require("@kohanajs/core-mvc");
+const mime = require('mime');
+const { ControllerMixin, View } = require('@kohanajs/core-mvc');
 
-class ControllerMixinView extends ControllerMixin{
-  /** @type {View} */
-  #template = null;
-  /** @type {View} */
-  #errorTemplate = null;
-  #placeHolder;
-  #layout;
+class ControllerMixinView extends ControllerMixin {
+  static PLACEHOLDER = 'placeHolder';
 
-  /**
-   *
-   * @param client
-   * @param opts
-   * @param opts.layout
-   * @param opts.placeHolder
-   * @param opts.themePath
-   * @param opts.viewClass
-   */
-  constructor(client, opts={}) {
-    super(client);
-    const {layout='layout/default', placeHolder = 'main', themePath = undefined, viewClass = View.defaultViewClass} = opts
+  static VIEW_CLASS = 'viewClass';
 
-    this.#layout = ControllerMixinView.getView(layout, {}, themePath, viewClass);
-    this.#placeHolder = placeHolder;
+  static THEME_PATH = 'themePath';
 
-    this.exports = {
-      getView          : (file, data= {}) => ControllerMixinView.getView(file, data, themePath, viewClass),
-      setTemplate      : (file, data= {}) => (this.#template      = (typeof file === 'string') ? ControllerMixinView.getView(file, data, themePath, viewClass) : file),
-      setLayout        : (file, data= {}) => (this.#layout        = (typeof file === 'string') ? ControllerMixinView.getView(file, data, themePath, viewClass) : file),
-      setErrorTemplate : (file, data= {}) => (this.#errorTemplate = (typeof file === 'string') ? ControllerMixinView.getView(file, data, themePath, viewClass) : file),
-      template         : () => this.#template,
-      errorTemplate    : () => this.#errorTemplate,
-      layout           : () => this.#layout,
+  static LAYOUT = 'layout';
+
+  static LAYOUT_FILE = 'layoutPath';
+
+  static TEMPLATE = 'template';
+
+  static ERROR_TEMPLATE = 'errorTemplate';
+
+  static init(state) {
+    const client = state.get('client');
+    const defaultViewData = {
+      language: client.language,
+    };
+
+    if (!state.get(this.LAYOUT_FILE))state.set(this.LAYOUT_FILE, 'layout/default');
+    if (!state.get(this.PLACEHOLDER))state.set(this.PLACEHOLDER, 'main');
+    if (!state.get(this.VIEW_CLASS))state.set(this.VIEW_CLASS, View.DefaultViewClass);
+
+    client.getView = (file, data = {}) => this.#getView(file, data, state.get(this.THEME_PATH), state.get(this.VIEW_CLASS));
+
+    client.setTemplate = (file, data = {}) => state.set(this.TEMPLATE, (typeof file === 'string')
+      ? this.#getView(file, { ...defaultViewData, ...data }, state.get(this.THEME_PATH), state.get(this.VIEW_CLASS))
+      : file);
+
+    client.setLayout = (file, data = {}) => state.set(this.LAYOUT, (typeof file === 'string')
+      ? this.#getView(file, { ...defaultViewData, ...data }, state.get(this.THEME_PATH), state.get(this.VIEW_CLASS))
+      : file);
+
+    client.setErrorTemplate = (file, data = {}) => state.set(this.ERROR_TEMPLATE, (typeof file === 'string')
+      ? this.#getView(file, { ...defaultViewData, ...data }, state.get(this.THEME_PATH), state.get(this.VIEW_CLASS))
+      : file);
+
+    if (!state.get(this.LAYOUT))client.setLayout(state.get(this.LAYOUT_FILE), {});
+  }
+
+  static async setup(state) {
+    const layoutView = state.get(this.LAYOUT);
+    if (state.get(this.LAYOUT_FILE) !== layoutView.file) {
+      state.set(this.LAYOUT, this.#getView(state.get(this.LAYOUT_FILE), layoutView.data, state.get(this.THEME_PATH), state.get(this.VIEW_CLASS)));
     }
   }
 
-  async after(){
-    //render template and put into layout's main output.
-    //no template, replace the controller body string into layout.
-    this.#layout.data[this.#placeHolder] = (this.#template) ? await this.#template.render() : this.client.body;
-    this.client.body = await this.#layout.render();
-  }
+  static async after(state) {
+    const client = state.get('client');
 
-  async exit(code){
-    if(code === 302) return;
-    if(this.#errorTemplate){
-      Object.assign(this.#errorTemplate.data, {body: this.client.body});
-      this.#layout.data[this.#placeHolder] = await this.#errorTemplate.render();
-    }else{
-      this.#layout.data[this.#placeHolder] = this.client.body;
+    // .json return json content;
+    if (/^application\/json/.test(client.headers['Content-Type'])) {
+      client.body = JSON.stringify(client.body);
+      return;
     }
-    this.client.body = await this.#layout.render();
+
+    // do not render non text content, eg, no need to render when controller read protected pdf
+    if (client.headers['Content-Type'] && /^text/.test(client.headers['Content-Type']) === false) {
+      return;
+    }
+
+    // render template and put into layout's main output.
+    // no template, replace the controller body string into layout.
+    const template = state.get(this.TEMPLATE);
+    const layout = state.get(this.LAYOUT);
+    layout.data[state.get(this.PLACEHOLDER)] = template ? await template.render() : client.body;
+    client.body = await layout.render();
   }
 
-  static getView(path, data, themePath, viewClass){
-    return new viewClass(path, data, themePath);
+  static async exit(state) {
+    const client = state.get('client');
+    const code = client.status;
+    if (code === 302) return;
+    if (client.headers && client.headers['Content-Type'] && /^application\/json/.test(client.headers['Content-Type'])) {
+      client.body = JSON.stringify(client.body);
+      return;
+    }
+    const errorTemplate = state.get(this.ERROR_TEMPLATE);
+    const layout = state.get(this.LAYOUT);
+    const placeHolder = state.get(this.PLACEHOLDER);
+
+    if (errorTemplate) {
+      Object.assign(errorTemplate.data, { body: client.body });
+      layout.data[placeHolder] = await errorTemplate.render();
+    } else {
+      layout.data[placeHolder] = client.body;
+    }
+    client.body = await layout.render();
+  }
+
+  static #getView(path, data, themePath, ViewClass) {
+    return new ViewClass(path, data, themePath);
   }
 }
 

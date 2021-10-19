@@ -1,56 +1,57 @@
-const KohanaJS = require('../../KohanaJS');
-const {ControllerMixin} = require("@kohanajs/core-mvc");
-const DatabaseDriver = require('../DatabaseDriver');
 const crypto = require('crypto');
+const { ControllerMixin } = require('@kohanajs/core-mvc');
+const DatabaseDriver = require('../DatabaseDriver');
 
-class ControllerMixinDatabase extends ControllerMixin{
+class ControllerMixinDatabase extends ControllerMixin {
   static #dbConnection = new Map();
-  #driver;
-  /**
-   *
-   * @param {Controller} client
-   * @param {Object} opts
-   */
-  constructor(client, opts={}) {
-    super(client);
-    const {append=undefined, databases=new Map(), driver=DatabaseDriver} = opts;
-    this.#driver = driver
 
-    if(append){
-      //append to exist database connection
-      const conn = this.#getConnections(databases);
-      conn.forEach((v, k) => {
-        append.set(k, v);
-      })
-      return;
-    }
+  static DATABASE_MAP = 'databaseMap';
 
-    const conn = this.#getConnections(databases);
+  static DATABASE_DRIVER = 'databaseDriver';
 
-    this.exports = {
-      databases: conn,
-    }
+  static DATABASES = 'databases';
+
+  static DEFAULT_DATABASE_DRIVER = DatabaseDriver;
+
+  static init(state) {
+    if (!state.get(this.DATABASE_MAP))state.set(this.DATABASE_MAP, new Map());
+    if (!state.get(this.DATABASES))state.set(this.DATABASES, new Map());
+    if (!state.get(this.DATABASE_DRIVER))state.set(this.DATABASE_DRIVER, this.DEFAULT_DATABASE_DRIVER);
+  }
+
+  static async setup(state) {
+    const conn = this.#getConnections(state.get(this.DATABASE_MAP), state.get(this.DATABASE_DRIVER));
+    conn.forEach((v, k) => {
+      state.get(this.DATABASES).set(k, v);
+    });
   }
 
   /**
    *
    * @param {Map} databaseMap
+   * @param {DatabaseDriver.} driverClass
+   * @returns {Map}
    */
-  #getConnections(databaseMap){
+  static #getConnections(databaseMap, driverClass) {
     const hash = crypto.createHash('sha256');
     hash.update(Array.from(databaseMap.keys()).join('') + Array.from(databaseMap.values()).join(''));
     const key = hash.digest('hex');
 
     const conn = ControllerMixinDatabase.#dbConnection.get(key);
-    if(conn && KohanaJS.config.database?.cache)return conn;
+    if (conn) return conn;
 
     const connections = new Map();
     databaseMap.forEach((v, k) => {
-      connections.set(k, this.#driver.create(v));
-    })
+      try {
+        connections.set(k, driverClass.create(v));
+      } catch (e) {
+        console.log(v);
+        throw e;
+      }
+    });
 
     connections.set('createdAt', Date.now());
-    ControllerMixinDatabase.#dbConnection.set(key, connections)
+    ControllerMixinDatabase.#dbConnection.set(key, connections);
 
     return connections;
   }
