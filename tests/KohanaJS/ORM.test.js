@@ -384,4 +384,8 @@ describe('orm test', () => {
 
     await ORM.insertAll(Product, ['name', 'available'], [['foo', true], ['bar', true], ['tar', false]]);
   });
+
+  test('cover database driver', async () => {
+
+  })
 });

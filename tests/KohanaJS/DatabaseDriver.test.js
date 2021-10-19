@@ -54,4 +54,22 @@ describe('Database Driver test', () => {
     await instance.close();
     expect('no error').toBe('no error');
   })
+
+  test('transaction fail', async () => {
+    const instance = new DatabaseDriver(datasource);
+    let isRollback = false;
+    instance.transactionRollback = async () =>{
+      isRollback = true;
+    }
+    await instance.transaction(()=>{});
+    expect(isRollback).toBe(false);
+
+    try{
+      await instance.transaction(()=>{throw new Error('error under transaction')});
+    }catch(e){
+      expect(e.message).toBe('error under transaction');
+    }
+
+    expect(isRollback).toBe(true);
+  })
 });
