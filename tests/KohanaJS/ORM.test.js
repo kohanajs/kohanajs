@@ -385,7 +385,17 @@ describe('orm test', () => {
     await ORM.insertAll(Product, ['name', 'available'], [['foo', true], ['bar', true], ['tar', false]]);
   });
 
-  test('cover database driver', async () => {
+  test('static eager load', async () => {
+    KohanaJS.init({ EXE_PATH: `${__dirname}/orm` });
+    const Address = ORM.require('Address');
 
+    const orms = [];
+    orms.push(await ORM.factory(Address, 2));
+    orms.push(await ORM.factory(Address, 3));
+    orms.push(await ORM.factory(Address, 11));
+
+    await ORM.eagerLoad(orms, {with :["Person"]}, {});
+
+    console.log(orms);
   })
 });

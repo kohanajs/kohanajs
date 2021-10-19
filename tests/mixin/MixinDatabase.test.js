@@ -35,4 +35,8 @@ describe('test mixin database', () => {
 
     expect(Array.from(d.state.get('databases').keys()).join(',')).toBe('session,foo,createdAt');
   });
+
+  test('test database get connection error', async () => {
+    //TODO: test database get connection error
+  })
 });

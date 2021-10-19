@@ -153,4 +153,12 @@ describe('Controller Mixin View Test', () => {
     await c.execute('test');
     expect(c.body).toBe('{"foo":"bar"}');
   });
+
+  test('do not render if header content type is not text', async () => {
+    //TODO: do not render if header content type is not text
+  })
+
+  test('render json on exit', async () => {
+    //TODO: do not render if header content type is not text
+  })
 });
