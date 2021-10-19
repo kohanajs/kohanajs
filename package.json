@@ -17,7 +17,8 @@
   },
   "homepage": "https://gitlab.com/kohanajs/kohanajs.git",
   "dependencies": {
-    "mime": "^2.5.2"
+    "mime": "^2.5.2",
+    "@kohanajs/core-mvc": "^3.1.0"
   },
   "devDependencies": {
     "jest": "^27.3.1"
