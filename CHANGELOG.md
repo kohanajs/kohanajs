@@ -1,11 +1,13 @@
 # Changelog
-All notable changes to this project will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
-## [Unreleased]
-### accept tags: Added, Changed, Removed, Deprecated, Removed, Fixed, Security
+### 6.1.4 (2021-10-19)
+
+
+### Bug Fixes
+
+* ORM field with Boolean type will become string after save. ([f3d13d4](https://gitlab.com/kohanajs/kohanajs/commit/f3d13d4c9c30d54faf8f882612f0989c188eaefb))
 
 ## [6.1.3] - 2021-10-16
 ### Fixed
