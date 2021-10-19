@@ -95,7 +95,7 @@ class KohanaJS {
     return KohanaJS;
   }
 
-  static #setPath(opts = {}) {
+  static #setPath(opts) {
     KohanaJS.EXE_PATH = opts.EXE_PATH || __dirname;
     KohanaJS.APP_PATH = opts.APP_PATH || `${KohanaJS.EXE_PATH}/application`;
     KohanaJS.MOD_PATH = opts.MOD_PATH || `${KohanaJS.APP_PATH}/modules`;
